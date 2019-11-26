@@ -566,9 +566,6 @@ void AssemblySpec::AssemblyNameInit(ASSEMBLYNAMEREF* pAsmName, PEImage* pImageIn
     if(GetName())
         gc.Name = StringObject::NewString(GetName());
 
-    if (GetCodeBase())
-        gc.CodeBase = StringObject::NewString(GetCodeBase());
-
     BOOL fPublicKey = m_dwFlags & afPublicKey;
 
     ULONG hashAlgId=0;
@@ -622,32 +619,6 @@ void AssemblySpec::AssemblyNameInit(ASSEMBLYNAMEREF* pAsmName, PEImage* pImageIn
     }
 
     GCPROTECT_END();
-}
-
-// This uses thread storage to allocate space. Please use Checkpoint and release it.
-void AssemblySpec::SetCodeBase(StackingAllocator* alloc, STRINGREF *pCodeBase)
-{
-    CONTRACTL
-    {
-        INSTANCE_CHECK;
-        THROWS;
-        GC_TRIGGERS;
-        MODE_COOPERATIVE;
-        PRECONDITION(CheckPointer(pCodeBase));
-        INJECT_FAULT(COMPlusThrowOM(););
-    }
-    CONTRACTL_END;
-
-    // Codebase
-    if (pCodeBase != NULL && *pCodeBase != NULL) {
-        WCHAR* pString;
-        int    iString;
-        (*pCodeBase)->RefInterpretGetStringValuesDangerousForGC(&pString, &iString);
-
-        DWORD dwCodeBase = (DWORD) iString+1;
-        m_wszCodeBase = new (alloc) WCHAR[dwCodeBase];
-        memcpy((void*)m_wszCodeBase, pString, dwCodeBase * sizeof(WCHAR));
-    }
 }
 
 #endif // CROSSGEN_COMPILE
@@ -932,7 +903,6 @@ Assembly *AssemblySpec::LoadAssembly(LPCWSTR pFilePath)
     CONTRACT_END;
 
     AssemblySpec spec;
-    spec.SetCodeBase(pFilePath);
     RETURN spec.LoadAssembly(FILE_LOADED);
 }
 

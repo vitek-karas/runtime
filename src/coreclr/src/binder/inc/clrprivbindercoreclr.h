@@ -44,7 +44,6 @@ public:
     }
 
     HRESULT Bind(SString     &assemblyDisplayName,
-                 LPCWSTR      wszCodeBase,
                  PEAssembly  *pParentAssembly,
                  BOOL         fNgenExplicitBind,
                  BOOL         fExplicitBindToNativeImage,

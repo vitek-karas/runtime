@@ -57,15 +57,6 @@ VOID BaseAssemblySpec::CloneFieldsToStackingAllocator( StackingAllocator* alloc)
         m_context.szLocale = temp;
     }
 
-    if ((~m_ownedFlags & CODEBASE_OWNED)  &&
-        m_wszCodeBase) {
-        S_UINT32 len = S_UINT32((DWORD) wcslen(m_wszCodeBase)) + S_UINT32(1);
-        if(len.IsOverflow()) COMPlusThrowHR(COR_E_OVERFLOW);
-        LPWSTR temp = (LPWSTR)alloc->Alloc(len*S_UINT32(sizeof(WCHAR)));
-        wcscpy_s(temp, len.Value(), m_wszCodeBase);
-        m_wszCodeBase = temp;
-    }
-
     if ((~m_ownedFlags & WINRT_TYPE_NAME_OWNED)) {
         if (m_szWinRtTypeNamespace)
         {
@@ -104,13 +95,6 @@ BOOL BaseAssemblySpec::IsMscorlib()
     CONTRACTL_END;
     if (m_pAssemblyName == NULL)
     {
-        LPCWSTR file = GetCodeBase();
-        if (file)
-        {
-            StackSString path(file);
-            PEAssembly::UrlToPath(path);
-            return SystemDomain::System()->IsBaseLibrary(path);
-        }
         return FALSE;
     }
 
@@ -171,13 +155,6 @@ BOOL BaseAssemblySpec::IsMscorlibSatellite() const
 
     if (m_pAssemblyName == NULL)
     {
-        LPCWSTR file = GetCodeBase();
-        if (file)
-        {
-            StackSString path(file);
-            PEAssembly::UrlToPath(path);
-            return SystemDomain::System()->IsBaseLibrarySatellite(path);
-        }
         return FALSE;
     }
 
@@ -237,14 +214,6 @@ VOID BaseAssemblySpec::ConvertPublicKeyToToken()
 BOOL BaseAssemblySpec::CompareRefToDef(const BaseAssemblySpec *pRef, const BaseAssemblySpec *pDef)
 {
     WRAPPER_NO_CONTRACT;
-
-    if(pRef->m_wszCodeBase || pDef->m_wszCodeBase)
-    {
-        if(!pRef->m_wszCodeBase || !pDef->m_wszCodeBase)
-            return FALSE;
-
-        return wcscmp(pRef->m_wszCodeBase,(pDef->m_wszCodeBase)) == 0;
-    }
 
     // Compare fields
 
@@ -565,19 +534,6 @@ HRESULT BaseAssemblySpec::Init(IAssemblyName *pName)
     if ((hr == S_OK) && (cbSize != 0) && (peKind < (afPA_NoPlatform >> afPA_Shift)) && (peKind >= (afPA_MSIL >> afPA_Shift)))
         m_dwFlags |= (((DWORD)peKind) << afPA_Shift);
 
-    cbSize = 0;
-    hr=pName->GetProperty(ASM_NAME_CODEBASE_URL, NULL, &cbSize);
-    if (hr == HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER)) {
-        m_wszCodeBase = new (nothrow) WCHAR [ cbSize/sizeof(WCHAR) ];
-        if (m_wszCodeBase == NULL)
-            return E_OUTOFMEMORY;
-        m_ownedFlags |= CODE_BASE_OWNED;
-        IfFailRet(pName->GetProperty(ASM_NAME_CODEBASE_URL,
-                                    (void*)m_wszCodeBase, &cbSize));
-    }
-    else
-        IfFailRet(hr);
-
     // Recover the Content Type enum
     DWORD dwContentType;
     cbSize = sizeof(dwContentType);
@@ -706,8 +662,6 @@ HRESULT BaseAssemblySpec::CreateFusionName(
                         sizeof(dwContentType)));
             }
         }
-
-        _ASSERTE(m_wszCodeBase == NULL);
 
         *ppName = pFusionAssemblyName;
 

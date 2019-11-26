@@ -29,8 +29,6 @@ namespace BINDER_SPACE
         return string.HashCaseInsensitive();
     }
 
-    void MutateUrlToPath(SString &urlOrPath);
-
     // It is safe to use either A or B as CombinedPath.
     void CombinePath(SString &pathA,
                      SString &pathB,

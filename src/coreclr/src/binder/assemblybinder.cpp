@@ -131,52 +131,6 @@ namespace BINDER_SPACE
             return hr;
         }
 
-        HRESULT URLToFullPath(PathString &assemblyPath)
-        {
-            HRESULT hr = S_OK;
-
-            SString::Iterator pos = assemblyPath.Begin();
-            if (assemblyPath.MatchCaseInsensitive(pos, g_BinderVariables->httpURLPrefix))
-            {
-                // HTTP downloads are unsupported
-                hr = FUSION_E_CODE_DOWNLOAD_DISABLED;
-            }
-            else
-            {
-                SString fullAssemblyPath;
-                WCHAR *pwzFullAssemblyPath = fullAssemblyPath.OpenUnicodeBuffer(MAX_LONGPATH);
-                DWORD dwCCFullAssemblyPath = MAX_LONGPATH + 1; // SString allocates extra byte for null.
-
-                MutateUrlToPath(assemblyPath);
-
-                dwCCFullAssemblyPath = WszGetFullPathName(assemblyPath.GetUnicode(),
-                                                          dwCCFullAssemblyPath,
-                                                          pwzFullAssemblyPath,
-                                                          NULL);
-                if (dwCCFullAssemblyPath > MAX_LONGPATH)
-                {
-                    fullAssemblyPath.CloseBuffer();
-                    pwzFullAssemblyPath = fullAssemblyPath.OpenUnicodeBuffer(dwCCFullAssemblyPath - 1);
-                    dwCCFullAssemblyPath = WszGetFullPathName(assemblyPath.GetUnicode(),
-                                                              dwCCFullAssemblyPath,
-                                                              pwzFullAssemblyPath,
-                                                              NULL);
-                }
-                fullAssemblyPath.CloseBuffer(dwCCFullAssemblyPath);
-
-                if (dwCCFullAssemblyPath == 0)
-                {
-                    hr = HRESULT_FROM_GetLastError();
-                }
-                else
-                {
-                    assemblyPath.Set(fullAssemblyPath);
-                }
-            }
-
-            return hr;
-        }
-
 #ifndef CROSSGEN_COMPILE
         HRESULT CreateImageAssembly(IMDInternalImport       *pIMetaDataAssemblyImport,
                                     PEKIND                   PeKind,
@@ -292,7 +246,6 @@ namespace BINDER_SPACE
     // for an example of how they're used.
     HRESULT AssemblyBinder::BindAssembly(/* in */  ApplicationContext  *pApplicationContext,
                                          /* in */  AssemblyName        *pAssemblyName,
-                                         /* in */  LPCWSTR              szCodeBase,
                                          /* in */  PEAssembly          *pParentAssembly,
                                          /* in */  BOOL                 fNgenExplicitBind,
                                          /* in */  BOOL                 fExplicitBindToNativeImage,
@@ -310,36 +263,12 @@ namespace BINDER_SPACE
             CRITSEC_Holder contextLock(pApplicationContext->GetCriticalSectionCookie());
 #endif
 
-            if (szCodeBase == NULL)
-            {
-                IF_FAIL_GO(BindByName(pApplicationContext,
-                                      pAssemblyName,
-                                      false, // skipFailureCaching
-                                      false, // skipVersionCompatibilityCheck
-                                      excludeAppPaths,
-                                      &bindResult));
-            }
-            else
-            {
-                PathString assemblyPath(szCodeBase);
-
-                // Convert URL to full path and block HTTP downloads
-                IF_FAIL_GO(URLToFullPath(assemblyPath));
-                BOOL fDoNgenExplicitBind = fNgenExplicitBind;
-
-                // Only use explicit ngen binding in the new coreclr path-based binding model
-                if (!pApplicationContext->IsTpaListProvided())
-                {
-                    fDoNgenExplicitBind = FALSE;
-                }
-
-                IF_FAIL_GO(BindWhereRef(pApplicationContext,
-                                        assemblyPath,
-                                        fDoNgenExplicitBind,
-                                        fExplicitBindToNativeImage,
-                                        excludeAppPaths,
-                                        &bindResult));
-            }
+            IF_FAIL_GO(BindByName(pApplicationContext,
+                                  pAssemblyName,
+                                  false, // skipFailureCaching
+                                  false, // skipVersionCompatibilityCheck
+                                  excludeAppPaths,
+                                  &bindResult));
 
             // Remember the post-bind version
             kContextVersion = pApplicationContext->GetVersion();

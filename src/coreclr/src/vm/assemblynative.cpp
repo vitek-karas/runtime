@@ -32,8 +32,7 @@
 #include "../binder/inc/bindertracing.h"
 #include "../binder/inc/clrprivbindercoreclr.h"
 
-FCIMPL6(Object*, AssemblyNative::Load, AssemblyNameBaseObject* assemblyNameUNSAFE,
-        StringObject* codeBaseUNSAFE,
+FCIMPL5(Object*, AssemblyNative::Load, AssemblyNameBaseObject* assemblyNameUNSAFE,
         AssemblyBaseObject* requestingAssemblyUNSAFE,
         StackCrawlMark* stackMark,
         CLR_BOOL fThrowOnFileNotFound,
@@ -51,7 +50,6 @@ FCIMPL6(Object*, AssemblyNative::Load, AssemblyNameBaseObject* assemblyNameUNSAF
     } gc;
 
     gc.assemblyName        = (ASSEMBLYNAMEREF)        assemblyNameUNSAFE;
-    gc.codeBase            = (STRINGREF)              codeBaseUNSAFE;
     gc.requestingAssembly  = (ASSEMBLYREF)            requestingAssemblyUNSAFE;
     gc.rv                  = NULL;
     gc.assemblyLoadContext = (ASSEMBLYLOADCONTEXTREF) assemblyLoadContextUNSAFE;
@@ -101,9 +99,6 @@ FCIMPL6(Object*, AssemblyNative::Load, AssemblyNameBaseObject* assemblyNameUNSAF
     {   // Insuficient assembly name for binding (e.g. ContentType=WindowsRuntime cannot bind by assembly name)
         EEFileLoadException::Throw(&spec, COR_E_NOTSUPPORTED);
     }
-
-    if (gc.codeBase != NULL)
-        spec.SetCodeBase(pStackingAllocator, &gc.codeBase);
 
     if (pParentAssembly != NULL)
         spec.SetParentAssembly(pParentAssembly);

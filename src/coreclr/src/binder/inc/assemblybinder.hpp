@@ -42,7 +42,6 @@ namespace BINDER_SPACE
         // for an example of how they're used.
         static HRESULT BindAssembly(/* in */  ApplicationContext  *pApplicationContext,
                                     /* in */  AssemblyName        *pAssemblyName,
-                                    /* in */  LPCWSTR              szCodeBase,
                                     /* in */  PEAssembly          *pParentAssembly,
                                     /* in */  BOOL                 fNgenExplicitBind,
                                     /* in */  BOOL                 fExplicitBindToNativeImage,

@@ -4523,7 +4523,7 @@ void AppDomain::AddUnmanagedImageToCache(LPCWSTR libraryName, NATIVE_LIBRARY_HAN
     if (libraryName)
     {
         AssemblySpec spec;
-        spec.SetCodeBase(libraryName);
+//        spec.SetCodeBase(libraryName);
         m_UnmanagedCache.InsertEntry(&spec, hMod);
     }
     return ;
@@ -4545,7 +4545,7 @@ NATIVE_LIBRARY_HANDLE AppDomain::FindUnmanagedImageInCache(LPCWSTR libraryName)
     if(libraryName == NULL) RETURN NULL;
 
     AssemblySpec spec;
-    spec.SetCodeBase(libraryName);
+    //spec.SetCodeBase(libraryName);
     RETURN (NATIVE_LIBRARY_HANDLE) m_UnmanagedCache.LookupEntry(&spec, 0);
 }
 
@@ -4692,7 +4692,6 @@ HRESULT AppDomain::BindAssemblySpecForHostedBinder(
     PRECONDITION(CheckPointer(pSpec));
     PRECONDITION(pSpec->GetAppDomain() == this);
     PRECONDITION(CheckPointer(ppAssembly));
-    PRECONDITION(pSpec->GetCodeBase() == nullptr);
 
     HRESULT hr = S_OK;
 

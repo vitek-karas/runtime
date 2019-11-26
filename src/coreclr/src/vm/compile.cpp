@@ -323,7 +323,6 @@ HRESULT CEECompileInfo::LoadAssemblyByPath(
             {
                 //ExplicitBind
                 CoreBindResult bindResult;
-                spec.SetCodeBase(pImage->GetPath());
                 spec.Bind(
                     pDomain,
                     TRUE,                   // fThrowOnFileNotFound

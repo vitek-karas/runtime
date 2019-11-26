@@ -100,10 +100,7 @@ VOID  AssemblySpec::Bind(AppDomain      *pAppDomain,
 
     pResult->Reset();
 
-    if (m_wszCodeBase == NULL)
-    {
-        GetDisplayName(0, assemblyDisplayName);
-    }
+    GetDisplayName(0, assemblyDisplayName);
 
     // Have a default binding context setup
     ICLRPrivBinder *pBinder = GetBindingContextFromParentAssembly(pAppDomain);
@@ -114,7 +111,7 @@ VOID  AssemblySpec::Bind(AppDomain      *pAppDomain,
     ReleaseHolder<ICLRPrivAssembly> pPrivAsm;
     _ASSERTE(pBinder != NULL);
 
-    if (m_wszCodeBase == NULL && IsMscorlibSatellite())
+    if (IsMscorlibSatellite())
     {
         StackSString sSystemDirectory(SystemDomain::System()->SystemDirectory());
         StackSString tmpString;
@@ -133,7 +130,7 @@ VOID  AssemblySpec::Bind(AppDomain      *pAppDomain,
 
         hr = CCoreCLRBinderHelper::BindToSystemSatellite(sSystemDirectory, sSimpleName, sCultureName, &pPrivAsm);
     }
-    else if (m_wszCodeBase == NULL)
+    else
     {
         // For name based binding these arguments shouldn't have been changed from default
         _ASSERTE(!fNgenExplicitBind && !fExplicitBindToNativeImage);
@@ -143,15 +140,6 @@ VOID  AssemblySpec::Bind(AppDomain      *pAppDomain,
         {
             hr = pBinder->BindAssemblyByName(pName, &pPrivAsm);
         }
-    }
-    else
-    {
-        hr = pTPABinder->Bind(assemblyDisplayName,
-                              m_wszCodeBase,
-                              GetParentAssembly() ? GetParentAssembly()->GetFile() : NULL,
-                              fNgenExplicitBind,
-                              fExplicitBindToNativeImage,
-                              &pPrivAsm);
     }
 
     pResult->SetHRBindResult(hr);
@@ -444,12 +432,6 @@ VOID BaseAssemblySpec::GetFileOrDisplayName(DWORD flags, SString &result) const
         PRECONDITION(result.IsEmpty());
     }
     CONTRACTL_END;
-
-    if (m_wszCodeBase)
-    {
-        result.Set(m_wszCodeBase);
-        return;
-    }
 
     GetDisplayNameInternal(flags, result);
 }

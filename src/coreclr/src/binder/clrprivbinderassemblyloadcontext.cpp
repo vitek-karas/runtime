@@ -29,7 +29,6 @@ HRESULT CLRPrivBinderAssemblyLoadContext::BindAssemblyByNameWorker(BINDER_SPACE:
     hr = AssemblyBinder::BindAssembly(&m_appContext,
                                       pAssemblyName,
                                       NULL,
-                                      NULL,
                                       FALSE, //fNgenExplicitBind,
                                       FALSE, //fExplicitBindToNativeImage,
                                       false, //excludeAppPaths,

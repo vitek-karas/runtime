@@ -1502,7 +1502,7 @@ struct FailedAssembly {
         CONTRACTL_END;
 
         displayName.SetASCII(pSpec->GetName());
-        location.Set(pSpec->GetCodeBase());
+        //location.Set(pSpec->GetCodeBase());
         error = ex->GetHR();
 
         //

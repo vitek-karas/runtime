@@ -27,7 +27,6 @@ HRESULT CLRPrivBinderCoreCLR::BindAssemblyByNameWorker(BINDER_SPACE::AssemblyNam
     hr = AssemblyBinder::BindAssembly(&m_appContext,
                                       pAssemblyName,
                                       NULL,
-                                      NULL,
                                       FALSE, //fNgenExplicitBind,
                                       FALSE, //fExplicitBindToNativeImage,
                                       excludeAppPaths,
@@ -206,7 +205,6 @@ HRESULT CLRPrivBinderCoreCLR::SetupBindingPaths(SString  &sTrustedPlatformAssemb
 // and fExplicitBindToNativeImage, and see code:CEECompileInfo::LoadAssemblyByPath
 // for an example of how they're used.
 HRESULT CLRPrivBinderCoreCLR::Bind(SString           &assemblyDisplayName,
-                                   LPCWSTR            wszCodeBase,
                                    PEAssembly        *pParentAssembly,
                                    BOOL               fNgenExplicitBind,
                                    BOOL               fExplicitBindToNativeImage,
@@ -231,7 +229,6 @@ HRESULT CLRPrivBinderCoreCLR::Bind(SString           &assemblyDisplayName,
         ReleaseHolder<BINDER_SPACE::Assembly> pAsm;
         hr = AssemblyBinder::BindAssembly(&m_appContext,
                                           pAssemblyName,
-                                          wszCodeBase,
                                           pParentAssembly,
                                           fNgenExplicitBind,
                                           fExplicitBindToNativeImage,

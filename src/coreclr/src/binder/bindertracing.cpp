@@ -143,8 +143,8 @@ namespace
         AssemblySpec *spec = request.AssemblySpec;
         _ASSERTE(spec != nullptr);
 
-        if (request.AssemblyPath.IsEmpty())
-            request.AssemblyPath = spec->GetCodeBase();
+        //if (request.AssemblyPath.IsEmpty())
+        //    request.AssemblyPath = spec->GetCodeBase();
 
         if (spec->GetName() != nullptr)
             spec->GetDisplayName(ASM_DISPLAYF_VERSION | ASM_DISPLAYF_CULTURE | ASM_DISPLAYF_PUBLIC_KEY_TOKEN, request.AssemblyName);

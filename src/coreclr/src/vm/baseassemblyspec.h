@@ -26,7 +26,7 @@ protected:
     PBYTE                       m_pbPublicKeyOrToken;
     DWORD                       m_cbPublicKeyOrToken;
     DWORD                       m_dwFlags;             // CorAssemblyFlags
-    LPCWSTR                     m_wszCodeBase;         // URL to the code
+    //LPCWSTR                     m_wszCodeBase;         // URL to the code
     LPCSTR                      m_szWinRtTypeNamespace;
     LPCSTR                      m_szWinRtTypeClassName;
     int                         m_ownedFlags;
@@ -37,7 +37,7 @@ public:
     {
         NAME_OWNED                  = 0x01,
         PUBLIC_KEY_OR_TOKEN_OWNED   = 0x02,
-        CODE_BASE_OWNED             = 0x04,
+        //CODE_BASE_OWNED             = 0x04,
         LOCALE_OWNED                = 0x08,
         CODEBASE_OWNED              = 0x10,
         WINRT_TYPE_NAME_OWNED       = 0x20,
@@ -92,9 +92,6 @@ public:
 
     void SetName(LPCSTR szName);
     void SetName(SString const & ssName);
-
-    LPCWSTR GetCodeBase() const;
-    void SetCodeBase(LPCWSTR szCodeBase);
 
     VOID SetCulture(LPCSTR szCulture);
     bool IsNeutralCulture();

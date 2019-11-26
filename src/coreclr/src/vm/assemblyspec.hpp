@@ -117,14 +117,6 @@ class AssemblySpec  : public BaseAssemblySpec
 
     void AssemblyNameInit(ASSEMBLYNAMEREF* pName, PEImage* pImageInfo); //[in,out], [in]
 
-
-    void SetCodeBase(LPCWSTR szCodeBase)
-    {
-        WRAPPER_NO_CONTRACT;
-        BaseAssemblySpec::SetCodeBase(szCodeBase);
-    }
-    void SetCodeBase(StackingAllocator* alloc, STRINGREF *pCodeBase);
-
     void SetParentAssembly(DomainAssembly *pAssembly)
     {
         CONTRACTL
