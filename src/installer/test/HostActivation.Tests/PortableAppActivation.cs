@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Microsoft.DotNet.CoreSetup.Test.HostActivation
 {
@@ -349,9 +350,10 @@ namespace Microsoft.DotNet.CoreSetup.Test.HostActivation
         }
 
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void AppHost_GUI_FrameworkDependent_MissingRuntimeFramework_ErrorReportedInDialog(bool missingHostfxr)
+        [InlineData("NoRuntime")]
+        [InlineData("OldHostfxr")]
+        [InlineData("MissingFramework")]
+        public void AppHost_GUI_FrameworkDependent_MissingRuntimeFramework_ErrorReportedInDialog(string testMode)
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -374,18 +376,39 @@ namespace Microsoft.DotNet.CoreSetup.Test.HostActivation
 
                 string expectedErrorCode;
                 string expectedUrlQuery;
-                if (missingHostfxr)
+                switch (testMode)
                 {
-                    expectedErrorCode = Constants.ErrorCode.CoreHostLibMissingFailure.ToString("x");
-                    expectedUrlQuery = "missing_runtime=true";
-                }
-                else
-                {
-                    invalidDotNet = new DotNetBuilder(invalidDotNet, sharedTestState.RepoDirectories.BuiltDotnet, "missingFramework")
-                        .Build()
-                        .BinPath;
-                    expectedErrorCode = Constants.ErrorCode.FrameworkMissingFailure.ToString("x");
-                    expectedUrlQuery = $"framework={Constants.MicrosoftNETCoreApp}&framework_version={sharedTestState.RepoDirectories.MicrosoftNETCoreAppVersion}";
+                    case "NoRuntime":
+                        expectedErrorCode = Constants.ErrorCode.CoreHostLibMissingFailure.ToString("x");
+                        expectedUrlQuery = "missing_runtime=true";
+                        break;
+                    case "OldHostfxr":
+                        {
+                            string hostFxrDirectory = Path.Combine(invalidDotNet, "host/fxr/2.0.0");
+                            Directory.CreateDirectory(hostFxrDirectory);
+
+                            // A bit of a hack - we use the mock hostpolicy in place of hostfxr.
+                            // We don't have an old hostfxr asset, but we don't really need it. All we need is a valid dynamic libary
+                            // which is missing some of the hostfxr exports (or all of them). This is simulating the older hostfxr which
+                            // didn't have all the >=3.0 exports which the >=3.0 apphost depends on.
+                            string mockHostPolicyFileName = RuntimeInformationExtensions.GetSharedLibraryFileNameForCurrentPlatform("mockhostpolicy");
+                            File.Copy(
+                                Path.Combine(sharedTestState.RepoDirectories.Artifacts, "corehost_test", mockHostPolicyFileName),
+                                Path.Combine(hostFxrDirectory, RuntimeInformationExtensions.GetSharedLibraryFileNameForCurrentPlatform("hostfxr")),
+                                true);
+                        }
+                        expectedErrorCode = Constants.ErrorCode.CoreHostLibMissingFailure.ToString("x");
+                        expectedUrlQuery = "missing_runtime=true";
+                        break;
+                    case "MissingFramework":
+                        invalidDotNet = new DotNetBuilder(invalidDotNet, sharedTestState.RepoDirectories.BuiltDotnet, "missingFramework")
+                            .Build()
+                            .BinPath;
+                        expectedErrorCode = Constants.ErrorCode.FrameworkMissingFailure.ToString("x");
+                        expectedUrlQuery = $"framework={Constants.MicrosoftNETCoreApp}&framework_version={sharedTestState.RepoDirectories.MicrosoftNETCoreAppVersion}";
+                        break;
+                    default:
+                        throw new XunitException($"Unexpected testMode value {testMode}");
                 }
 
                 Command command = Command.Create(appExe)
