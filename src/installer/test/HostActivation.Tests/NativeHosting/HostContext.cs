@@ -238,33 +238,65 @@ namespace Microsoft.DotNet.CoreSetup.Test.HostActivation.NativeHosting
         }
 
         [Theory]
-        [InlineData(Scenario.Mixed, CheckProperties.None)]
-        [InlineData(Scenario.Mixed, CheckProperties.Get)]
-        [InlineData(Scenario.Mixed, CheckProperties.Set)]
-        [InlineData(Scenario.Mixed, CheckProperties.Remove)]
-        [InlineData(Scenario.Mixed, CheckProperties.GetAll)]
-        [InlineData(Scenario.Mixed, CheckProperties.GetActive)]
-        [InlineData(Scenario.Mixed, CheckProperties.GetAllActive)]
-        [InlineData(Scenario.NonContextMixed, CheckProperties.None)]
-        [InlineData(Scenario.NonContextMixed, CheckProperties.Get)]
-        [InlineData(Scenario.NonContextMixed, CheckProperties.Set)]
-        [InlineData(Scenario.NonContextMixed, CheckProperties.Remove)]
-        [InlineData(Scenario.NonContextMixed, CheckProperties.GetAll)]
-        [InlineData(Scenario.NonContextMixed, CheckProperties.GetActive)]
-        [InlineData(Scenario.NonContextMixed, CheckProperties.GetAllActive)]
-        public void RunApp_GetDelegate(string scenario, string checkProperties)
+        [InlineData(Scenario.Mixed, false, false, CheckProperties.None)]
+        [InlineData(Scenario.Mixed, false, false, CheckProperties.Get)]
+        [InlineData(Scenario.Mixed, false, false, CheckProperties.Set)]
+        [InlineData(Scenario.Mixed, false, false, CheckProperties.Remove)]
+        [InlineData(Scenario.Mixed, false, false, CheckProperties.GetAll)]
+        [InlineData(Scenario.Mixed, false, false, CheckProperties.GetActive)]
+        [InlineData(Scenario.Mixed, false, false, CheckProperties.GetAllActive)]
+        [InlineData(Scenario.Mixed, false, true, CheckProperties.None)]
+        [InlineData(Scenario.Mixed, true, false, CheckProperties.None)]
+        [InlineData(Scenario.Mixed, true, false, CheckProperties.Get)]
+        [InlineData(Scenario.Mixed, true, false, CheckProperties.Set)]
+        [InlineData(Scenario.Mixed, true, false, CheckProperties.Remove)]
+        [InlineData(Scenario.Mixed, true, false, CheckProperties.GetAll)]
+        [InlineData(Scenario.Mixed, true, false, CheckProperties.GetActive)]
+        [InlineData(Scenario.Mixed, true, false, CheckProperties.GetAllActive)]
+        [InlineData(Scenario.Mixed, true, true, CheckProperties.None)]
+        [InlineData(Scenario.NonContextMixed, false, false, CheckProperties.None)]
+        [InlineData(Scenario.NonContextMixed, false, false, CheckProperties.Get)]
+        [InlineData(Scenario.NonContextMixed, false, false, CheckProperties.Set)]
+        [InlineData(Scenario.NonContextMixed, false, false, CheckProperties.Remove)]
+        [InlineData(Scenario.NonContextMixed, false, false, CheckProperties.GetAll)]
+        [InlineData(Scenario.NonContextMixed, false, false, CheckProperties.GetActive)]
+        [InlineData(Scenario.NonContextMixed, false, false, CheckProperties.GetAllActive)]
+        [InlineData(Scenario.NonContextMixed, false, true, CheckProperties.None)]
+        [InlineData(Scenario.NonContextMixed, true, false, CheckProperties.None)]
+        [InlineData(Scenario.NonContextMixed, true, false, CheckProperties.Get)]
+        [InlineData(Scenario.NonContextMixed, true, false, CheckProperties.Set)]
+        [InlineData(Scenario.NonContextMixed, true, false, CheckProperties.Remove)]
+        [InlineData(Scenario.NonContextMixed, true, false, CheckProperties.GetAll)]
+        [InlineData(Scenario.NonContextMixed, true, false, CheckProperties.GetActive)]
+        [InlineData(Scenario.NonContextMixed, true, false, CheckProperties.GetAllActive)]
+        [InlineData(Scenario.NonContextMixed, true, true, CheckProperties.None)]
+        [InlineData(Scenario.NonContextMixed, true, true, CheckProperties.GetAllActive)]
+        public void RunApp_GetDelegate(string scenario, bool isSelfContained, bool primaryContext, string checkProperties)
         {
             if (scenario != Scenario.Mixed && scenario != Scenario.NonContextMixed)
                 throw new Exception($"Unexpected scenario: {scenario}");
+
+            string appPath;
+            string hostFxrPath;
+            if (isSelfContained)
+            {
+                appPath = sharedState.SelfContainedAppPath;
+                hostFxrPath = sharedState.SelfContainedHostFxrPath;
+            }
+            else
+            {
+                appPath = sharedState.AppPath;
+                hostFxrPath = sharedState.HostFxrPath;
+            }
 
             string[] args =
             {
                 HostContextArg,
                 scenario,
                 checkProperties,
-                sharedState.HostFxrPath,
-                sharedState.AppPath,
-                sharedState.RuntimeConfigPath
+                hostFxrPath,
+                appPath,
+                primaryContext ? "[null]" : sharedState.RuntimeConfigPath
             };
             string[] appArgs =
             {
@@ -273,19 +305,24 @@ namespace Microsoft.DotNet.CoreSetup.Test.HostActivation.NativeHosting
             };
             CommandResult result = sharedState.CreateNativeHostCommand(args.Concat(appArgs), sharedState.DotNetRoot)
                 .EnvironmentVariable("COREHOST_TRACE_VERBOSITY", "3")
-                .EnvironmentVariable("TEST_BLOCK_MOCK_EXECUTE_ASSEMBLY", $"{sharedState.AppPath}.block")
-                .EnvironmentVariable("TEST_SIGNAL_MOCK_EXECUTE_ASSEMBLY", $"{sharedState.AppPath}.signal")
+                .EnvironmentVariable("TEST_BLOCK_MOCK_EXECUTE_ASSEMBLY", $"{appPath}.block")
+                .EnvironmentVariable("TEST_SIGNAL_MOCK_EXECUTE_ASSEMBLY", $"{appPath}.signal")
                 .Execute();
 
             result.Should().Pass()
-                .And.ExecuteAssemblyMock(sharedState.AppPath, appArgs)
-                .And.InitializeSecondaryContext(sharedState.RuntimeConfigPath, Success_DifferentRuntimeProperties)
-                .And.CreateDelegateMock_InMemoryAssembly();
+                .And.ExecuteAssemblyMock(appPath, appArgs);
+
+            if (!primaryContext)
+            {
+                result.Should().InitializeSecondaryContext(sharedState.RuntimeConfigPath, Success_DifferentRuntimeProperties);
+            }
+
+            result.Should().CreateDelegateMock_InMemoryAssembly();
 
             CheckPropertiesValidation propertyValidation = new CheckPropertiesValidation(checkProperties, LogPrefix.App, SharedTestState.AppPropertyName, SharedTestState.AppPropertyValue);
             if (scenario == Scenario.Mixed)
             {
-                result.Should().InitializeContextForApp(sharedState.AppPath);
+                result.Should().InitializeContextForApp(appPath);
                 propertyValidation.ValidateActiveContext(result, SharedTestState.ConfigPropertyName);
             }
 

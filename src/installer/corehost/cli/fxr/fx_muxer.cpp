@@ -870,9 +870,6 @@ int fx_muxer_t::run_app(host_context_t *context)
 
 int fx_muxer_t::get_runtime_delegate(host_context_t *context, coreclr_delegate_type type, void **delegate)
 {
-    if (context->is_app)
-        return StatusCode::InvalidArgFailure;
-
     const corehost_context_contract &contract = context->hostpolicy_context_contract;
     {
         propagate_error_writer_t propagate_error_writer_to_corehost(context->hostpolicy_contract.set_error_writer);

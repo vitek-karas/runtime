@@ -65,4 +65,12 @@ namespace host_context_test
         int argc,
         const pal::char_t *argv[],
         pal::stringstream_t &test_output);
+    bool app_and_get_delegate(
+        check_properties check_properties,
+        const pal::string_t& hostfxr_path,
+        const pal::char_t* app_path,
+        const pal::char_t* config_path,
+        int argc,
+        const pal::char_t* argv[],
+        pal::stringstream_t& test_output);
 }

@@ -650,9 +650,24 @@ SHARED_API int32_t HOSTFXR_CALLTYPE hostfxr_get_runtime_delegate(
 
     *delegate = nullptr;
 
-    host_context_t *context = host_context_t::from_handle(host_context_handle);
-    if (context == nullptr)
-        return StatusCode::InvalidArgFailure;
+    host_context_t* context;
+    if (host_context_handle == nullptr)
+    {
+        const host_context_t* context_maybe = fx_muxer_t::get_active_host_context();
+        if (context_maybe == nullptr)
+        {
+            trace::error(_X("Hosting components context has not been initialized. Cannot get runtime properties."));
+            return StatusCode::HostInvalidState;
+        }
+
+        context = const_cast<host_context_t *>(context_maybe);
+    }
+    else
+    {
+        context = host_context_t::from_handle(host_context_handle);
+        if (context == nullptr)
+            return StatusCode::InvalidArgFailure;
+    }
 
     return fx_muxer_t::get_runtime_delegate(context, hostfxr_delegate_to_coreclr_delegate(type), delegate);
 }

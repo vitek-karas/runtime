@@ -153,14 +153,24 @@ namespace
         pal::stringstream_t &test_output)
     {
         hostfxr_handle handle;
-        int rc = hostfxr.init_config(config_path, nullptr, &handle);
-        if (!STATUS_CODE_SUCCEEDED(rc))
+        int rc;
+        if (config_path == nullptr)
         {
-            test_output << log_prefix << _X("hostfxr_initialize_for_runtime_config failed: ") << std::hex << std::showbase << rc << std::endl;
-            return false;
+            // Don't initialize context, use the primary one instead
+            handle = nullptr;
+            test_output << log_prefix << _X("Using the primary context handle=nullptr.") << std::endl;
         }
+        else
+        {
+            rc = hostfxr.init_config(config_path, nullptr, &handle);
+            if (!STATUS_CODE_SUCCEEDED(rc))
+            {
+                test_output << log_prefix << _X("hostfxr_initialize_for_runtime_config failed: ") << std::hex << std::showbase << rc << std::endl;
+                return false;
+            }
 
-        test_output << log_prefix << _X("hostfxr_initialize_for_runtime_config succeeded: ") << std::hex << std::showbase << rc << std::endl;
+            test_output << log_prefix << _X("hostfxr_initialize_for_runtime_config succeeded: ") << std::hex << std::showbase << rc << std::endl;
+        }
 
         inspect_modify_properties(check_properties, hostfxr, handle, argc, argv, log_prefix, test_output);
 
@@ -169,9 +179,13 @@ namespace
         if (rc != StatusCode::Success)
             test_output << log_prefix << _X("hostfxr_get_runtime_delegate failed: ") << std::hex << std::showbase << rc << std::endl;
 
-        int rcClose = hostfxr.close(handle);
-        if (rcClose != StatusCode::Success)
-            test_output << log_prefix << _X("hostfxr_close failed: ") << std::hex << std::showbase << rc  << std::endl;
+        int rcClose = StatusCode::Success;
+        if (handle != nullptr)
+        {
+            rcClose = hostfxr.close(handle);
+            if (rcClose != StatusCode::Success)
+                test_output << log_prefix << _X("hostfxr_close failed: ") << std::hex << std::showbase << rc << std::endl;
+        }
 
         return rc == StatusCode::Success && rcClose == StatusCode::Success;
     }

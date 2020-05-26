@@ -189,6 +189,11 @@ int main(const int argc, const pal::char_t *argv[])
             --remaining_argc;
             remaining_argv = remaining_argc > 0 ? &argv[min_argc + 1] : nullptr;
 
+            if (pal::strcmp(config_path, _X("[null]")) == 0)
+            {
+                config_path = nullptr;
+            }
+
             success = host_context_test::mixed(check_properties, hostfxr_path, app_or_config_path, config_path, remaining_argc, remaining_argv, test_output);
         }
         else if (pal::strcmp(scenario, _X("non_context_mixed")) == 0)
@@ -203,6 +208,11 @@ int main(const int argc, const pal::char_t *argv[])
             const pal::char_t *config_path = argv[6];
             --remaining_argc;
             remaining_argv = remaining_argc > 0 ? &argv[min_argc + 1] : nullptr;
+
+            if (pal::strcmp(config_path, _X("[null]")) == 0)
+            {
+                config_path = nullptr;
+            }
 
             success = host_context_test::non_context_mixed(check_properties, hostfxr_path, app_or_config_path, config_path, remaining_argc, remaining_argv, test_output);
         }
