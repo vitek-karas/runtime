@@ -30,13 +30,14 @@ const SString &BundleFileLocation::Path() const
     return Bundle::AppBundle->Path();
 }
 
-Bundle::Bundle(LPCWSTR bundlePath, BundleProbe *probe)
+Bundle::Bundle(LPCWSTR bundlePath, LPCWSTR systemPath, BundleProbe *probe)
 {
     STANDARD_VM_CONTRACT;
 
     _ASSERTE(probe != nullptr);
 
     m_path.Set(bundlePath);
+    m_systemPath.Set(systemPath);
     m_probe = probe;
 
     // The bundle-base path is the directory containing the single-file bundle.

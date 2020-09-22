@@ -120,7 +120,8 @@ static void ConvertConfigPropertiesToUnicode(
     LPCWSTR** propertyKeysWRef,
     LPCWSTR** propertyValuesWRef,
     BundleProbe** bundleProbe,
-    bool* hostPolicyEmbedded)
+    bool* hostPolicyEmbedded,
+    LPCWSTR* systemPath)
 {
     LPCWSTR* propertyKeysW = new (nothrow) LPCWSTR[propertyCount];
     ASSERTE_ALL_BUILDS(propertyKeysW != nullptr);
@@ -143,6 +144,14 @@ static void ConvertConfigPropertiesToUnicode(
         {
             // The HOSTPOLICY_EMBEDDED property indicates if the executable has hostpolicy statically linked in
             *hostPolicyEmbedded = (wcscmp(propertyValuesW[propertyIndex], W("true")) == 0);
+        }
+        else if (strcmp(propertyKeys[propertyIndex], "SYSTEM_PATH") == 0)
+        {
+            // This is set by the host if the correct system path can't be determined by looking at the location
+            // of the runtime module itself. This is the case when the runtime is linked into the single file host
+            // so there's no coreclr library itself and the entire bundle is extracted onto disk - so for example
+            // System.Private.CoreLib doesn't exist "next" to the runtime.
+            *systemPath = propertyValuesW[propertyIndex];
         }
     }
 
@@ -187,6 +196,7 @@ int coreclr_initialize(
     LPCWSTR* propertyValuesW;
     BundleProbe* bundleProbe = nullptr;
     bool hostPolicyEmbedded = false;
+    LPCWSTR systemPath = nullptr;
 
     ConvertConfigPropertiesToUnicode(
         propertyKeys,
@@ -195,7 +205,8 @@ int coreclr_initialize(
         &propertyKeysW,
         &propertyValuesW,
         &bundleProbe,
-        &hostPolicyEmbedded);
+        &hostPolicyEmbedded,
+        &systemPath);
 
 #ifdef TARGET_UNIX
     DWORD error = PAL_InitializeCoreCLR(exePath, g_coreclr_embedded);
@@ -220,7 +231,7 @@ int coreclr_initialize(
 
     if (bundleProbe != nullptr)
     {
-        static Bundle bundle(StringToUnicode(exePath), bundleProbe);
+        static Bundle bundle(StringToUnicode(exePath), systemPath, bundleProbe);
         Bundle::AppBundle = &bundle;
     }
 

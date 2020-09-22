@@ -234,15 +234,27 @@ int hostpolicy_context_t::initialize(hostpolicy_init_t &hostpolicy_init, const a
 
         if (!coreclr_properties.add(common_property::BundleProbe, ptr_stream.str().c_str()))
         {
-            log_duplicate_property_error(coreclr_property_bag_t::common_property_to_string(common_property::StartUpHooks));
+            log_duplicate_property_error(coreclr_property_bag_t::common_property_to_string(common_property::BundleProbe));
             return StatusCode::LibHostDuplicateProperty;
+        }
+
+        // In the case where everything is extracted onto disk, set the system path to the extraction directory
+        // This is important if the runtime is compiled into the host, in which case it would have no way to detect
+        // the extraction directory.
+        if (bundle::runner_t::app()->is_netcoreapp3_compat_mode())
+        {
+            if (!coreclr_properties.add(common_property::SystemPath, app_base.c_str()))
+            {
+                log_duplicate_property_error(coreclr_property_bag_t::common_property_to_string(common_property::SystemPath));
+                return StatusCode::LibHostDuplicateProperty;
+            }
         }
     }
 
 #if defined(HOSTPOLICY_EMBEDDED)
     if (!coreclr_properties.add(common_property::HostPolicyEmbedded, _X("true")))
     {
-        log_duplicate_property_error(coreclr_property_bag_t::common_property_to_string(common_property::StartUpHooks));
+        log_duplicate_property_error(coreclr_property_bag_t::common_property_to_string(common_property::HostPolicyEmbedded));
         return StatusCode::LibHostDuplicateProperty;
     }
 #endif

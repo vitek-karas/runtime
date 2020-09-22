@@ -14,6 +14,7 @@
 #include "shimload.h"
 #include "metadataexports.h"
 #include "ex.h"
+#include "bundle.h"
 
 #include <dbgenginemetrics.h>
 
@@ -336,8 +337,16 @@ STDAPI GetCORSystemDirectoryInternaL(SString& pBuffer)
     }
 
 #else
-
-    if (!PAL_GetPALDirectoryWrapper(pBuffer)) {
+    if (Bundle::AppIsBundle() && !Bundle::AppBundle->SystemPath().IsEmpty())
+    {
+        EX_TRY
+        {
+            pBuffer = Bundle::AppBundle->SystemPath();
+        }
+        EX_CATCH_HRESULT(hr);
+    }
+    else if (hr == S_OK && !PAL_GetPALDirectoryWrapper(pBuffer))
+    {
         hr = HRESULT_FROM_GetLastError();
     }
 #endif

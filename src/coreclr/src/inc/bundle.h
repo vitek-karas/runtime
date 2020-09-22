@@ -39,11 +39,12 @@ typedef bool(__stdcall BundleProbe)(LPCWSTR, INT64*, INT64*);
 class Bundle
 {
 public:
-    Bundle(LPCWSTR bundlePath, BundleProbe *probe);
+    Bundle(LPCWSTR bundlePath, LPCWSTR systemPath, BundleProbe *probe);
     BundleFileLocation Probe(LPCWSTR path, bool pathIsBundleRelative = false) const;
 
     const SString &Path() const { LIMITED_METHOD_CONTRACT; return m_path; }
     const SString &BasePath() const { LIMITED_METHOD_CONTRACT; return m_basePath; }
+    const SString &SystemPath() const { LIMITED_METHOD_CONTRACT; return m_systemPath; }
 
     static Bundle* AppBundle; // The BundleInfo for the current app, initialized by coreclr_initialize.
     static bool AppIsBundle() { LIMITED_METHOD_CONTRACT; return AppBundle != nullptr; }
@@ -52,6 +53,7 @@ public:
 private:
 
     SString m_path; // The path to single-file executable
+    SString m_systemPath; // The system path if this needs to be different from the exe path above (otherwise empty)
     BundleProbe *m_probe;
 
     SString m_basePath; // The prefix to denote a path within the bundle
