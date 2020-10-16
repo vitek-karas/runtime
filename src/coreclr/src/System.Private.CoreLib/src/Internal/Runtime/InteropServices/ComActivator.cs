@@ -744,7 +744,8 @@ $@"{nameof(UnregisterClassForTypeInternal)} arguments:
         public static object Create()
         {
 #if FEATURE_COMINTEROP_UNMANAGED_ACTIVATION
-            return new LicenseInteropProxy();
+            //return new LicenseInteropProxy();
+            throw new PlatformNotSupportedException();
 #else
             throw new PlatformNotSupportedException();
 #endif
