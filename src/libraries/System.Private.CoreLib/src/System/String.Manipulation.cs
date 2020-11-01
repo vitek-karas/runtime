@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 using Internal.Runtime.CompilerServices;
 
@@ -588,8 +589,24 @@ namespace System
 
         public static unsafe string Join(char separator, string?[] value, int startIndex, int count)
         {
-            // Defer argument validation to the internal function
-            return JoinCore(&separator, 1, value, startIndex, count);
+            if (value == null)
+            {
+                throw new ArgumentNullException(nameof(value));
+            }
+            if (startIndex < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex), SR.ArgumentOutOfRange_StartIndex);
+            }
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), SR.ArgumentOutOfRange_NegativeCount);
+            }
+            if (startIndex > value.Length - count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex), SR.ArgumentOutOfRange_IndexCountBuffer);
+            }
+
+            return JoinCore(&separator, 1, value.AsSpan(startIndex, count));
         }
 
         // Joins an array of strings together as one string with a separator between each original string.
@@ -625,6 +642,16 @@ namespace System
 
         public static string Join(string? separator, IEnumerable<string?> values)
         {
+            if (values is List<string?> valuesIList)
+            {
+                return Join(separator, CollectionsMarshal.AsSpan(valuesIList));
+            }
+
+            if (values is string?[] valuesArray)
+            {
+                return Join(separator, (ReadOnlySpan<string?>)valuesArray);
+            }
+
             if (values == null)
             {
                 throw new ArgumentNullException(nameof(values));
@@ -665,11 +692,38 @@ namespace System
         //
         public static unsafe string Join(string? separator, string?[] value, int startIndex, int count)
         {
+            if (value == null)
+            {
+                throw new ArgumentNullException(nameof(value));
+            }
+            if (startIndex < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex), SR.ArgumentOutOfRange_StartIndex);
+            }
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), SR.ArgumentOutOfRange_NegativeCount);
+            }
+            if (startIndex > value.Length - count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startIndex), SR.ArgumentOutOfRange_IndexCountBuffer);
+            }
+
             separator ??= Empty;
             fixed (char* pSeparator = &separator._firstChar)
             {
-                // Defer argument validation to the internal function
-                return JoinCore(pSeparator, separator.Length, value, startIndex, count);
+                return JoinCore(pSeparator, separator.Length, value.AsSpan(startIndex, count));
+            }
+        }
+
+        // Joins a span of strings together as one string with a separator between each original string.
+        //
+        private static unsafe string Join(string? separator, ReadOnlySpan<string?> value)
+        {
+            separator ??= Empty;
+            fixed (char* pSeparator = &separator._firstChar)
+            {
+                return JoinCore(pSeparator, separator.Length, value);
             }
         }
 
@@ -761,35 +815,19 @@ namespace System
             }
         }
 
-        private static unsafe string JoinCore(char* separator, int separatorLength, string?[] value, int startIndex, int count)
+        private static unsafe string JoinCore(char* separator, int separatorLength, ReadOnlySpan<string?> value)
         {
             // If the separator is null, it is converted to an empty string before entering this function.
             // Even for empty strings, fixed should never return null (it should return a pointer to a null char).
             Debug.Assert(separator != null);
             Debug.Assert(separatorLength >= 0);
 
-            if (value == null)
-            {
-                throw new ArgumentNullException(nameof(value));
-            }
-            if (startIndex < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(startIndex), SR.ArgumentOutOfRange_StartIndex);
-            }
-            if (count < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(count), SR.ArgumentOutOfRange_NegativeCount);
-            }
-            if (startIndex > value.Length - count)
-            {
-                throw new ArgumentOutOfRangeException(nameof(startIndex), SR.ArgumentOutOfRange_IndexCountBuffer);
-            }
-
+            int count = value.Length;
             if (count <= 1)
             {
                 return count == 0 ?
                     string.Empty :
-                    value[startIndex] ?? string.Empty;
+                    value[0] ?? string.Empty;
             }
 
             long totalSeparatorsLength = (long)(count - 1) * separatorLength;
@@ -800,7 +838,7 @@ namespace System
             int totalLength = (int)totalSeparatorsLength;
 
             // Calculate the length of the resultant string so we know how much space to allocate.
-            for (int i = startIndex, end = startIndex + count; i < end; i++)
+            for (int i = 0; i < count; i++)
             {
                 string? currentValue = value[i];
                 if (currentValue != null)
@@ -817,7 +855,7 @@ namespace System
             string result = FastAllocateString(totalLength);
             int copiedLength = 0;
 
-            for (int i = startIndex, end = startIndex + count; i < end; i++)
+            for (int i = 0; i < count; i++)
             {
                 // It's possible that another thread may have mutated the input array
                 // such that our second read of an index will not be the same string
@@ -840,7 +878,7 @@ namespace System
                     copiedLength += valueLen;
                 }
 
-                if (i < end - 1)
+                if (i < count - 1)
                 {
                     // Fill in the separator.
                     fixed (char* pResult = &result._firstChar)
@@ -867,7 +905,7 @@ namespace System
             // fall back should be extremely rare.
             return copiedLength == totalLength ?
                 result :
-                JoinCore(separator, separatorLength, (string?[])value.Clone(), startIndex, count);
+                JoinCore(separator, separatorLength, value.ToArray().AsSpan());
         }
 
         public string PadLeft(int totalWidth) => PadLeft(totalWidth, ' ');
@@ -1124,48 +1162,71 @@ namespace System
 
         public string Replace(string oldValue, string? newValue)
         {
-            if (oldValue == null)
+            if (oldValue is null)
+            {
                 throw new ArgumentNullException(nameof(oldValue));
+            }
             if (oldValue.Length == 0)
+            {
                 throw new ArgumentException(SR.Argument_StringZeroLength, nameof(oldValue));
+            }
 
-            // Api behavior: if newValue is null, instances of oldValue are to be removed.
-            newValue ??= string.Empty;
+            // If newValue is null, treat it as an empty string.  Callers use this to remove the oldValue.
+            newValue ??= Empty;
 
+            // Track the locations of oldValue to be replaced.
             var replacementIndices = new ValueListBuilder<int>(stackalloc int[StackallocIntBufferSizeLimit]);
 
-            unsafe
+            if (oldValue.Length == 1)
             {
-                fixed (char* pThis = &_firstChar)
-                {
-                    int matchIdx = 0;
-                    int lastPossibleMatchIdx = this.Length - oldValue.Length;
-                    while (matchIdx <= lastPossibleMatchIdx)
-                    {
-                        char* pMatch = pThis + matchIdx;
-                        for (int probeIdx = 0; probeIdx < oldValue.Length; probeIdx++)
-                        {
-                            if (pMatch[probeIdx] != oldValue[probeIdx])
-                            {
-                                goto Next;
-                            }
-                        }
-                        // Found a match for the string. Record the location of the match and skip over the "oldValue."
-                        replacementIndices.Append(matchIdx);
-                        matchIdx += oldValue.Length;
-                        continue;
+                // Special-case oldValues that are a single character.  Even though there's an overload that takes
+                // a single character, its newValue is also a single character, so this overload ends up being used
+                // often to remove characters by having an empty newValue.
 
-                    Next:
-                        matchIdx++;
+                if (newValue.Length == 1)
+                {
+                    // With both the oldValue and newValue being a single character, it's cheaper to just use the other overload.
+                    return Replace(oldValue[0], newValue[0]);
+                }
+
+                // Find all occurrences of the oldValue character.
+                char c = oldValue[0];
+                int i = 0;
+                while (true)
+                {
+                    int pos = SpanHelpers.IndexOf(ref Unsafe.Add(ref _firstChar, i), c, Length - i);
+                    if (pos == -1)
+                    {
+                        break;
                     }
+                    replacementIndices.Append(i + pos);
+                    i += pos + 1;
+                }
+            }
+            else
+            {
+                // Find all occurrences of the oldValue string.
+                int i = 0;
+                while (true)
+                {
+                    int pos = SpanHelpers.IndexOf(ref Unsafe.Add(ref _firstChar, i), Length - i, ref oldValue._firstChar, oldValue.Length);
+                    if (pos == -1)
+                    {
+                        break;
+                    }
+                    replacementIndices.Append(i + pos);
+                    i += pos + oldValue.Length;
                 }
             }
 
+            // If the oldValue wasn't found, just return the original string.
             if (replacementIndices.Length == 0)
+            {
                 return this;
+            }
 
-            // String allocation and copying is in separate method to make this method faster for the case where
-            // nothing needs replacing.
+            // Perform the replacement. String allocation and copying is in separate method to make this method faster
+            // for the case where nothing needs replacing.
             string dst = ReplaceHelper(oldValue.Length, newValue, replacementIndices.AsSpan());
 
             replacementIndices.Dispose();
