@@ -7,6 +7,7 @@
 #include "coreclr_resolver.h"
 #include <utils.h>
 #include <error_codes.h>
+#include <chrono>
 
 namespace
 {
@@ -53,6 +54,17 @@ pal::hresult_t coreclr_t::create(
         ++index;
     };
     properties.enumerate(callback);
+
+    pal::string_t trace_str;
+    if (pal::getenv(_X("__COREHOST_PRINT_START_TIME"), &trace_str))
+    {
+        auto trace_val = pal::xtoi(trace_str.c_str());
+        if (trace_val > 0)
+        {
+            auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            trace::println(_X("--- CLR start time (us): %llu"), microseconds);
+        }
+    }
 
     pal::hresult_t hr;
     hr = coreclr_contract.coreclr_initialize(

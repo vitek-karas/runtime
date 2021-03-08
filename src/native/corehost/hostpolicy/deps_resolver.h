@@ -266,6 +266,7 @@ private:
 
     // Various probe configurations.
     std::vector<probe_config_t> m_probes;
+    bool m_extra_probes_present;
 
     // Fallback probe dir
     std::vector<pal::string_t> m_additional_probes;

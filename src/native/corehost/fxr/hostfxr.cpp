@@ -15,6 +15,7 @@
 #include "host_context.h"
 #include "bundle/info.h"
 #include <framework_info.h>
+#include <chrono>
 
 namespace
 {
@@ -22,6 +23,19 @@ namespace
     {
         trace::setup();
         trace::info(_X("--- Invoked %s [commit hash: %s]"), entry_point, _STRINGIFY(REPO_COMMIT_HASH));
+
+        pal::string_t trace_str;
+        if (!pal::getenv(_X("__COREHOST_PRINT_START_TIME"), &trace_str))
+        {
+            return;
+        }
+
+        auto trace_val = pal::xtoi(trace_str.c_str());
+        if (trace_val > 0)
+        {
+            auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            trace::println(_X("--- Start time (us): %llu"), microseconds);
+        }
     }
 }
 

@@ -9,6 +9,7 @@
 #include "trace.h"
 #include "utils.h"
 #include "hostfxr_resolver.h"
+#include <chrono>
 
 #if defined(FEATURE_APPHOST)
 #include "bundle_marker.h"

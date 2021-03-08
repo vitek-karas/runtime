@@ -40,7 +40,7 @@ static pal::string_t normalize_dir_separator(const pal::string_t& path)
 //    If the file exists in the path relative to the "base" directory within the 
 //    single-file or on disk.
 
-bool deps_entry_t::to_path(const pal::string_t& base, const pal::string_t& ietf_dir, bool look_in_base, bool look_in_bundle, bool is_servicing, pal::string_t* str, bool &found_in_bundle) const
+bool deps_entry_t::to_path(const pal::string_t& base, const pal::string_t& ietf_dir, bool look_in_base, bool look_in_bundle, bool is_servicing, pal::string_t* str, bool &found_in_bundle, bool avoid_fs_check) const
 {
     pal::string_t& candidate = *str;
 
@@ -94,7 +94,7 @@ bool deps_entry_t::to_path(const pal::string_t& base, const pal::string_t& ietf_
     candidate.assign(base);
     append_path(&candidate, sub_path.c_str());
 
-    bool exists = pal::file_exists(candidate);
+    bool exists = avoid_fs_check || pal::file_exists(candidate);
     const pal::char_t* query_type = look_in_base ? _X("Local") : _X("Relative");
     if (!exists)
     {
@@ -137,7 +137,7 @@ bool deps_entry_t::to_path(const pal::string_t& base, const pal::string_t& ietf_
 // Returns:
 //    If the file exists in the path relative to the "base" directory.
 //
-bool deps_entry_t::to_dir_path(const pal::string_t& base, bool look_in_bundle, pal::string_t* str, bool& found_in_bundle) const
+bool deps_entry_t::to_dir_path(const pal::string_t& base, bool look_in_bundle, pal::string_t* str, bool& found_in_bundle, bool avoid_fs_check) const
 {
     pal::string_t ietf_dir;
 
@@ -159,7 +159,7 @@ bool deps_entry_t::to_dir_path(const pal::string_t& base, bool look_in_bundle, p
                         base.c_str(), ietf_dir.c_str(), asset.name.c_str());
     }
 
-    return to_path(base, ietf_dir, true, look_in_bundle, false, str, found_in_bundle);
+    return to_path(base, ietf_dir, true, look_in_bundle, false, str, found_in_bundle, avoid_fs_check);
 }
 
 // -----------------------------------------------------------------------------
@@ -175,10 +175,10 @@ bool deps_entry_t::to_dir_path(const pal::string_t& base, bool look_in_bundle, p
 // Returns:
 //    If the file exists in the path relative to the "base" directory.
 //
-bool deps_entry_t::to_rel_path(const pal::string_t& base, bool look_in_bundle, bool is_servicing, pal::string_t* str) const
+bool deps_entry_t::to_rel_path(const pal::string_t& base, bool look_in_bundle, bool is_servicing, pal::string_t* str, bool avoid_fs_check) const
 {
     bool found_in_bundle;
-    bool result = to_path(base, _X(""), false, look_in_bundle, is_servicing, str, found_in_bundle);
+    bool result = to_path(base, _X(""), false, look_in_bundle, is_servicing, str, found_in_bundle, avoid_fs_check);
     assert(!found_in_bundle);
     return result;
 }
@@ -217,5 +217,5 @@ bool deps_entry_t::to_full_path(const pal::string_t& base, bool is_servicing, pa
         append_path(&new_base, library_path.c_str());
     }
 
-    return to_rel_path(new_base, false, is_servicing, str);
+    return to_rel_path(new_base, false, is_servicing, str, false);
 }

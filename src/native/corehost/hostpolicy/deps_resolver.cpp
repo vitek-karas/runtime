@@ -45,7 +45,7 @@ void add_unique_path(
 {
     // Resolve sym links.
     pal::string_t real = path;
-    pal::realpath(&real);
+    //pal::realpath(&real);
 
     if (existing->count(real))
     {
@@ -251,6 +251,8 @@ void deps_resolver_t::setup_probe_config(
         }
     }
 
+    int additionalProbesStartCount = m_probes.size();
+
     setup_shared_store_probes(args);
 
     for (const auto& probe : m_additional_probes)
@@ -258,6 +260,8 @@ void deps_resolver_t::setup_probe_config(
         // Additional paths
         m_probes.push_back(probe_config_t::lookup(probe));
     }
+
+    m_extra_probes_present = m_probes.size() > additionalProbesStartCount;
 
     if (trace::is_enabled())
     {
@@ -318,7 +322,7 @@ bool deps_resolver_t::probe_deps_entry(const deps_entry_t& entry, const pal::str
                 // If the deps json has the package name and version, then someone has already done rid selection and
                 // put the right asset in the dir. So checking just package name and version would suffice.
                 // No need to check further for the exact asset relative sub path.
-                if (config.probe_deps_json->has_package(entry.library_name, entry.library_version) && entry.to_dir_path(probe_dir, false, candidate, found_in_bundle))
+                if (config.probe_deps_json->has_package(entry.library_name, entry.library_version) && entry.to_dir_path(probe_dir, false, candidate, found_in_bundle, !m_extra_probes_present))
                 {
                     assert(!found_in_bundle);
                     trace::verbose(_X("    Probed deps json and matched '%s'"), candidate->c_str());
@@ -337,7 +341,7 @@ bool deps_resolver_t::probe_deps_entry(const deps_entry_t& entry, const pal::str
             {
                 if (entry.is_rid_specific)
                 {
-                    if (entry.to_rel_path(deps_dir, true, false, candidate))
+                    if (entry.to_rel_path(deps_dir, true, false, candidate, !m_extra_probes_present))
                     {
                         trace::verbose(_X("    Probed deps dir and matched '%s'"), candidate->c_str());
                         return true;
@@ -346,7 +350,7 @@ bool deps_resolver_t::probe_deps_entry(const deps_entry_t& entry, const pal::str
                 else
                 {
                     // Non-rid assets, lookup in the published dir.
-                    if (entry.to_dir_path(deps_dir, true, candidate, found_in_bundle))
+                    if (entry.to_dir_path(deps_dir, true, candidate, found_in_bundle, !m_extra_probes_present))
                     {
                         trace::verbose(_X("    Probed deps dir and matched '%s'"), candidate->c_str());
                         return true;
@@ -590,7 +594,7 @@ bool deps_resolver_t::resolve_tpa_list(
     {
         // Workaround for CoreFX not being able to resolve sym links.
         pal::string_t real_asset_path = item.second.resolved_path;
-        pal::realpath(&real_asset_path);
+        //pal::realpath(&real_asset_path);
         output->append(real_asset_path);
         output->push_back(PATH_SEPARATOR);
     }
