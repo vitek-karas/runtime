@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ILLink.Tests.TestCasesRunner;
 using Mono.Cecil;
 using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.TestCases;
@@ -117,9 +118,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
             rspFilePath.DeleteIfExists();
             System.IO.File.WriteAllText(rspFilePath.ToString(), builder.Args.ToString());
 
-			trimmer.Trim (rspFilePath);
+            var logWriter = new TestLogWriter();
+			trimmer.Trim (rspFilePath, logWriter);
 
-			return new TrimmedTestCaseResult (testCase, compilationResult.InputAssemblyPath, sandbox.OutputDirectory.Combine (compilationResult.InputAssemblyPath.FileName), compilationResult.ExpectationsAssemblyPath, sandbox, metadataProvider, compilationResult);
+			return new TrimmedTestCaseResult (testCase, compilationResult.InputAssemblyPath, compilationResult.ExpectationsAssemblyPath, sandbox, metadataProvider, compilationResult, logWriter);
 		}
 
 		protected virtual void AddLinkOptions (TestCaseSandbox sandbox, ManagedCompilationResult compilationResult, TrimmerOptionsBuilder builder, TestCaseMetadataProvider metadataProvider)
