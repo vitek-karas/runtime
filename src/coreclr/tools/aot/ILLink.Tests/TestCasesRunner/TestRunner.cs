@@ -1,5 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using ILLink.Tests.TestCasesRunner;
@@ -10,7 +12,7 @@ using Xunit.Sdk;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
-	public class TestRunner
+    public class TestRunner
 	{
 		private readonly ObjectFactory _factory;
 
@@ -114,12 +116,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			var builder = _factory.CreateTrimmerOptionsBuilder (metadataProvider);
 
 			AddLinkOptions (sandbox, compilationResult, builder, metadataProvider);
-            NPath rspFilePath = sandbox.InputDirectory.Combine("ilc.rsp");
-            rspFilePath.DeleteIfExists();
-            System.IO.File.WriteAllText(rspFilePath.ToString(), builder.Args.ToString());
 
             var logWriter = new TestLogWriter();
-			trimmer.Trim (rspFilePath, logWriter);
+			trimmer.Trim (builder.Options, logWriter);
 
 			return new TrimmedTestCaseResult (testCase, compilationResult.InputAssemblyPath, compilationResult.ExpectationsAssemblyPath, sandbox, metadataProvider, compilationResult, logWriter);
 		}

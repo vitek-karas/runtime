@@ -19,14 +19,14 @@ namespace Mono.Linker.Tests.TestCasesRunner
 	{
 		protected readonly TestCaseCompilationMetadataProvider _metadataProvider;
 		protected readonly TestCaseSandbox _sandbox;
-		protected readonly ILCompiler _ilCompiler;
+		protected readonly ILInputCompiler _ilCompiler;
 
 		public TestCaseCompiler (TestCaseSandbox sandbox, TestCaseCompilationMetadataProvider metadataProvider)
-			: this (sandbox, metadataProvider, new ILCompiler ())
+			: this (sandbox, metadataProvider, new ILInputCompiler ())
 		{
 		}
 
-		public TestCaseCompiler (TestCaseSandbox sandbox, TestCaseCompilationMetadataProvider metadataProvider, ILCompiler ilCompiler)
+		public TestCaseCompiler (TestCaseSandbox sandbox, TestCaseCompilationMetadataProvider metadataProvider, ILInputCompiler ilCompiler)
 		{
 			_ilCompiler = ilCompiler;
 			_sandbox = sandbox;

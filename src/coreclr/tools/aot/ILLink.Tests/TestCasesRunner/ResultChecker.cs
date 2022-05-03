@@ -9,6 +9,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using FluentAssertions;
+using ILCompiler;
+using ILCompiler.Dataflow;
 using ILCompiler.Logging;
 using ILLink.Tests.TestCasesRunner;
 using Internal.TypeSystem;
@@ -121,7 +123,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
                                 if ((bool)attr.ConstructorArguments[1].Value)
                                     matchedMessages = loggedMessages.Where(m => Regex.IsMatch(m.ToString(), expectedMessage)).ToList();
                                 else
-                                    matchedMessages = loggedMessages.Where(m => m.ToString().Contains(expectedMessage)).ToList(); ;
+                                    matchedMessages = loggedMessages.Where(m => MessageTextContains(m.ToString(), expectedMessage)).ToList(); ;
                                 Assert.True(
                                     matchedMessages.Count > 0,
                                     $"Expected to find logged message matching `{expectedMessage}`, but no such message was found.{Environment.NewLine}Logged messages:{Environment.NewLine}{string.Join(Environment.NewLine, loggedMessages)}");
@@ -140,7 +142,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
                                     {
                                         if ((bool)attr.ConstructorArguments[1].Value)
                                             return !Regex.IsMatch(loggedMessage.ToString(), unexpectedMessage);
-                                        return !loggedMessage.ToString().Contains(unexpectedMessage);
+                                        return !MessageTextContains(loggedMessage.ToString(), unexpectedMessage);
                                     };
 
                                     Assert.True(
@@ -176,7 +178,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
                                     bool messageNotFound = false;
                                     foreach (var expectedMessage in expectedMessageContains)
                                     {
-                                        if (!loggedMessage.Text.Contains(expectedMessage))
+                                        if (!MessageTextContains(loggedMessage.Text, expectedMessage))
                                         {
                                             messageNotFound = true;
                                             break;
@@ -343,7 +345,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
             {
                 var origin = mc.Origin;
                 Debug.Assert(origin != null);
-                if (GetActualOriginDisplayName(origin?.MemberDefinition) == GetExpectedOriginDisplayName(expectedOriginProvider))
+                if (GetActualOriginDisplayName(origin?.MemberDefinition) == ConvertSignatureToIlcFormat(GetExpectedOriginDisplayName(expectedOriginProvider)))
                     return true;
 
                 var actualMember = origin!.Value.MemberDefinition;
@@ -375,7 +377,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
             static string? GetActualOriginDisplayName(TypeSystemEntity? entity) => entity switch
             {
                 DefType defType => TrimAssemblyNamePrefix(defType.ToString()),
-                MethodDesc method => TrimAssemblyNamePrefix(method.ToString()),
+                MethodDesc method => TrimAssemblyNamePrefix(GetMethodDescDisplayName(method)),
                 FieldDesc field => TrimAssemblyNamePrefix(field.ToString()),
                 ModuleDesc module => module.Assembly.GetName().Name,
                 _ => null
@@ -403,6 +405,38 @@ namespace Mono.Linker.Tests.TestCasesRunner
                     AssemblyDefinition asm => asm.Name.Name,
                     _ => throw new NotImplementedException()
                 };
+
+            static bool MessageTextContains(string message, string value)
+            {
+                // This is a workaround for different formatting of methods between ilc and linker/analyzer
+                // Sometimes they're written with a space after comma and sometimes without
+                //    Method(String,String)   - ilc
+                //    Method(String, String)  - linker/analyzer
+                return message.Contains(value) || message.Contains(ConvertSignatureToIlcFormat(value));
+            }
+
+            static string ConvertSignatureToIlcFormat(string value)
+            {
+                if (value.Contains('(') || value.Contains('<'))
+                {
+                    value = value.Replace(", ", ",");
+                }
+
+                return value;
+            }
+        }
+
+        static System.Reflection.MethodInfo? s_MethodDesc_GetDisplayName = null;
+
+        static string GetMethodDescDisplayName(MethodDesc methodDesc)
+        {
+            if (s_MethodDesc_GetDisplayName == null)
+            {
+                var type = typeof(FlowAnnotations).Assembly.GetType("ILCompiler.DisplayNameHelpers")!;
+                s_MethodDesc_GetDisplayName = type.GetMethod("GetDisplayName", new Type[] { typeof(MethodDesc) });
+            }
+
+            return (string)s_MethodDesc_GetDisplayName!.Invoke(null, new object[] { methodDesc })!;
         }
 
         static bool HasAttribute(ICustomAttributeProvider caProvider, string attributeName)
