@@ -30,6 +30,11 @@ namespace Mono.Linker.Tests.TestCases
             return TestNamesBySuiteName("FeatureSettings");
         }
 
+        public static IEnumerable<object[]> DataFlow()
+        {
+            return TestNamesBySuiteName("DataFlow");
+        }
+
         public static TestCaseCollector CreateCollector ()
 		{
 			GetDirectoryPaths (out string rootSourceDirectory, out string testCaseAssemblyPath);

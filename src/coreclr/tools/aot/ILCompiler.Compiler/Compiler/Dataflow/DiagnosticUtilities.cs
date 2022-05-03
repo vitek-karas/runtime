@@ -26,6 +26,9 @@ namespace ILCompiler.Dataflow
 
         internal static string GetParameterNameForErrorMessage(ParameterOrigin origin)
         {
+            if (origin.Method is EcmaMethod ecmaMethod)
+                return ecmaMethod.GetParameterDisplayName(origin.Index);
+
             return $"#{origin.Index}";
         }
 

@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
-	public class ILCompiler
+	public class ILInputCompiler
 	{
 		public NPath Compile (CompilerOptions options)
 		{

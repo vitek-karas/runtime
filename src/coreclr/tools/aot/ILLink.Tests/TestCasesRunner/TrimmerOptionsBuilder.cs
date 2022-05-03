@@ -1,38 +1,42 @@
-﻿using System;
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using Mono.Linker.Tests.Extensions;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
-	public class TrimmerOptionsBuilder
+    public class TrimmerOptionsBuilder
 	{
         //public TrimmerOptions Options { get; } = new();
 		private readonly TestCaseMetadataProvider _metadataProvider;
 
-        public StringBuilder Args { get; } = new();
+        public readonly TrimmerOptions Options;
 
 		public TrimmerOptionsBuilder (TestCaseMetadataProvider metadataProvider)
 		{
+            Options = new TrimmerOptions();
 			_metadataProvider = metadataProvider;
 
             string runtimeBinDir = (string)AppContext.GetData("ILLink.Tests.RuntimeBinDirectory")!;
-            Args.AppendLine($"-r:{Path.Combine(runtimeBinDir, "aotsdk", "*.dll")}");
+            AppendExpandedPaths(Options.ReferenceFilePaths, Path.Combine(runtimeBinDir, "aotsdk", "*.dll"));
 
             string runtimePackDir = (string)AppContext.GetData("ILLink.Tests.MicrosoftNetCoreAppRuntimePackDirectory")!;
-            Args.AppendLine($"-r:{Path.Combine(runtimePackDir, "*.dll")}");
+            AppendExpandedPaths(Options.ReferenceFilePaths, Path.Combine(runtimePackDir, "*.dll"));
 
-            Args.AppendLine($"-g");
-            Args.AppendLine($"--initassembly:System.Private.CoreLib");
-            Args.AppendLine($"--initassembly:System.Private.StackTraceMetadata");
-            Args.AppendLine($"--initassembly:System.Private.TypeLoader");
-            Args.AppendLine($"--initassembly:System.Private.Reflection.Execution");
-            Args.AppendLine($"--initassembly:System.Private.Interop");
-            Args.AppendLine($"--directpinvokelist:{Path.Combine(runtimeBinDir, "build", "WindowsAPIs.txt")}");
-            Args.AppendLine($"--stacktracedata");
-            Args.AppendLine($"--scanreflection");
+            Options.InitAssemblies.Add("System.Private.CoreLib");
+            Options.InitAssemblies.Add("System.Private.StackTraceMetadata");
+            Options.InitAssemblies.Add("System.Private.TypeLoader");
+            Options.InitAssemblies.Add("System.Private.Reflection.Execution");
+            Options.InitAssemblies.Add("System.Private.Interop");
+
+            Options.FeatureSwitches.Add("System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization", false);
+            Options.FeatureSwitches.Add("System.Resources.ResourceManager.AllowCustomResourceTypes", false);
+            Options.FeatureSwitches.Add("System.Linq.Expressions.CanCompileToIL", false);
+            Options.FeatureSwitches.Add("System.Linq.Expressions.CanEmitObjectArrayDelegate", false);
+            Options.FeatureSwitches.Add("System.Linq.Expressions.CanCreateArbitraryDelegates", false);
         }
 
         public virtual void AddSearchDirectory (NPath directory)
@@ -41,12 +45,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public virtual void AddReference (NPath path)
 		{
-            Args.AppendLine($"-r:{path.ToString()}");
+            AppendExpandedPaths(Options.ReferenceFilePaths, path.ToString());
 		}
 
 		public virtual void AddOutputDirectory (NPath directory)
 		{
-            Args.AppendLine($"-o:{directory.ToString()}");
 		}
 
 		public virtual void AddLinkXmlFile (string file)
@@ -67,12 +70,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public virtual void AddLinkAssembly(string fileName)
 		{
-            Args.AppendLine($"--trim:{fileName}");
+            Options.TrimAssemblies.Add(fileName);
 		}
 
 		public virtual void LinkFromAssembly (string fileName)
 		{
-            Args.AppendLine(fileName);
+            AppendExpandedPaths(Options.InputFilePaths, fileName);
 		}
 
 		public virtual void LinkFromPublicAndFamily (string fileName)
@@ -139,7 +142,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
             if (flag == "--feature")
             {
-                Args.AppendLine($"--feature:{values[0]}={values[1]}");
+                Options.FeatureSwitches.Add(values[0], bool.Parse(values[1]));
             }
         }
 
@@ -211,5 +214,38 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			foreach (var additionalArgument in options.AdditionalArguments)
 				AddAdditionalArgument (additionalArgument.Key, additionalArgument.Value);
 		}
-	}
+
+        static void AppendExpandedPaths(Dictionary<string, string> dictionary, string pattern)
+        {
+            bool empty = true;
+
+            string directoryName = Path.GetDirectoryName(pattern)!;
+            string searchPattern = Path.GetFileName(pattern);
+
+            if (directoryName == "")
+                directoryName = ".";
+
+            if (Directory.Exists(directoryName))
+            {
+                foreach (string fileName in Directory.EnumerateFiles(directoryName, searchPattern))
+                {
+                    string fullFileName = Path.GetFullPath(fileName);
+
+                    string simpleName = Path.GetFileNameWithoutExtension(fileName);
+
+                    if (!dictionary.ContainsKey(simpleName))
+                    {
+                        dictionary.Add(simpleName, fullFileName);
+                    }
+
+                    empty = false;
+                }
+            }
+
+            if (empty)
+            {
+                throw new Exception("No files matching " + pattern);
+            }
+        }
+    }
 }
