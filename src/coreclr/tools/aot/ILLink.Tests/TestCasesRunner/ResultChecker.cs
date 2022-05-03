@@ -343,24 +343,20 @@ namespace Mono.Linker.Tests.TestCasesRunner
             {
                 var origin = mc.Origin;
                 Debug.Assert(origin != null);
-                if (origin?.MemberDefinition is ModuleDesc module)
-                    return expectedOriginProvider is AssemblyDefinition expectedAsm && module.Assembly.GetName().Name == expectedAsm.Name.Name;
-
-                var actualMember = origin?.MemberDefinition;
-                var expectedOriginMember = expectedOriginProvider as IMemberDefinition;
-                if (actualMember?.ToString() == expectedOriginMember?.FullName)
+                if (GetActualOriginDisplayName(origin?.MemberDefinition) == GetExpectedOriginDisplayName(expectedOriginProvider))
                     return true;
 
+                var actualMember = origin!.Value.MemberDefinition;
                 // Compensate for cases where for some reason the OM doesn't preserve the declaring types
                 // on certain things after trimming.
                 if (actualMember != null && GetOwningType(actualMember) == null &&
-                    GetMemberName(actualMember) == expectedOriginMember?.Name)
+                    GetMemberName(actualMember) == (expectedOriginProvider as IMemberDefinition)?.Name)
                     return true;
 
                 return false;
             }
 
-            TypeDesc? GetOwningType(TypeSystemEntity entity) => entity switch
+            static TypeDesc? GetOwningType(TypeSystemEntity entity) => entity switch
             {
                 DefType defType => defType.ContainingType,
                 MethodDesc method => method.OwningType,
@@ -368,13 +364,45 @@ namespace Mono.Linker.Tests.TestCasesRunner
                 _ => null
             };
 
-            string? GetMemberName(TypeSystemEntity? entity) => entity switch
+            static string? GetMemberName(TypeSystemEntity? entity) => entity switch
             {
                 DefType defType => defType.Name,
                 MethodDesc method => method.Name,
                 FieldDesc field => field.Name,
                 _ => null
             };
+
+            static string? GetActualOriginDisplayName(TypeSystemEntity? entity) => entity switch
+            {
+                DefType defType => TrimAssemblyNamePrefix(defType.ToString()),
+                MethodDesc method => TrimAssemblyNamePrefix(method.ToString()),
+                FieldDesc field => TrimAssemblyNamePrefix(field.ToString()),
+                ModuleDesc module => module.Assembly.GetName().Name,
+                _ => null
+            };
+
+            static string TrimAssemblyNamePrefix(string name)
+            {
+                if (name.StartsWith('['))
+                {
+                    int i = name.IndexOf(']');
+                    if (i > 0)
+                    {
+                        return name.Substring(i + 1);
+                    }
+                }
+
+                return name;
+            }
+
+            static string GetExpectedOriginDisplayName(ICustomAttributeProvider provider) =>
+                provider switch
+                {
+                    MethodDefinition method => method.GetDisplayName(),
+                    IMemberDefinition member => member.FullName,
+                    AssemblyDefinition asm => asm.Name.Name,
+                    _ => throw new NotImplementedException()
+                };
         }
 
         static bool HasAttribute(ICustomAttributeProvider caProvider, string attributeName)
