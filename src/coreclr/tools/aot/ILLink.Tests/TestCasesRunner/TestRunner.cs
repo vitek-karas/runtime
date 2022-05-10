@@ -21,7 +21,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			_factory = factory;
 		}
 
-		public virtual TrimmedTestCaseResult? Run (TestCase testCase)
+		public virtual ILCompilerTestCaseResult? Run (TestCase testCase)
 		{
             try
             {
@@ -51,7 +51,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
             }
 		}
 
-		public virtual TrimmedTestCaseResult Relink (TrimmedTestCaseResult result)
+		public virtual ILCompilerTestCaseResult Relink (ILCompilerTestCaseResult result)
 		{
 			PrepForLink (result.Sandbox, result.CompilationResult);
 			return Link (result.TestCase, result.Sandbox, result.CompilationResult, result.MetadataProvider);
@@ -109,7 +109,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 		}
 
-		private TrimmedTestCaseResult Link (TestCase testCase, TestCaseSandbox sandbox, ManagedCompilationResult compilationResult, TestCaseMetadataProvider metadataProvider)
+		private ILCompilerTestCaseResult Link (TestCase testCase, TestCaseSandbox sandbox, ManagedCompilationResult compilationResult, TestCaseMetadataProvider metadataProvider)
 		{
 			var trimmer = _factory.CreateTrimmer();
 
@@ -120,10 +120,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
             var logWriter = new TestLogWriter();
 			trimmer.Trim (builder.Options, logWriter);
 
-			return new TrimmedTestCaseResult (testCase, compilationResult.InputAssemblyPath, compilationResult.ExpectationsAssemblyPath, sandbox, metadataProvider, compilationResult, logWriter);
+			return new ILCompilerTestCaseResult (testCase, compilationResult.InputAssemblyPath, compilationResult.ExpectationsAssemblyPath, sandbox, metadataProvider, compilationResult, logWriter);
 		}
 
-		protected virtual void AddLinkOptions (TestCaseSandbox sandbox, ManagedCompilationResult compilationResult, TrimmerOptionsBuilder builder, TestCaseMetadataProvider metadataProvider)
+		protected virtual void AddLinkOptions (TestCaseSandbox sandbox, ManagedCompilationResult compilationResult, ILCompilerOptionsBuilder builder, TestCaseMetadataProvider metadataProvider)
 		{
 			var caseDefinedOptions = metadataProvider.GetLinkerOptions (sandbox.InputDirectory);
 

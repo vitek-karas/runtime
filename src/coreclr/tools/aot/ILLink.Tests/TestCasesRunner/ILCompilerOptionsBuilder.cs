@@ -8,16 +8,16 @@ using Mono.Linker.Tests.Extensions;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
-    public class TrimmerOptionsBuilder
+    public class ILCompilerOptionsBuilder
 	{
         //public TrimmerOptions Options { get; } = new();
 		private readonly TestCaseMetadataProvider _metadataProvider;
 
-        public readonly TrimmerOptions Options;
+        public readonly ILCompilerOptions Options;
 
-		public TrimmerOptionsBuilder (TestCaseMetadataProvider metadataProvider)
+		public ILCompilerOptionsBuilder (TestCaseMetadataProvider metadataProvider)
 		{
-            Options = new TrimmerOptions();
+            Options = new ILCompilerOptions();
 			_metadataProvider = metadataProvider;
 
             string runtimeBinDir = (string)AppContext.GetData("ILLink.Tests.RuntimeBinDirectory")!;

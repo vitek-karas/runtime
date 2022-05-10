@@ -104,8 +104,6 @@ namespace ILCompiler
 
         private bool _help;
 
-        private ILogWriter _testLogWriter = null;
-
         private Program()
         {
         }
@@ -739,7 +737,7 @@ namespace ILCompiler
             }
             ilProvider = new FeatureSwitchManager(ilProvider, featureSwitches);
 
-            var logger = new Logger(_testLogWriter ?? new TextLogWriter(Console.Out), _isVerbose, ProcessWarningCodes(_suppressedWarnings), _singleWarn, _singleWarnEnabledAssemblies, _singleWarnDisabledAssemblies);
+            var logger = new Logger(Console.Out, _isVerbose, ProcessWarningCodes(_suppressedWarnings), _singleWarn, _singleWarnEnabledAssemblies, _singleWarnDisabledAssemblies);
 
             var stackTracePolicy = _emitStackTraceData ?
                 (StackTraceEmissionPolicy)new EcmaMethodStackTraceEmissionPolicy() : new NoStackTraceEmissionPolicy();

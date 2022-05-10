@@ -12,20 +12,12 @@ using Internal.TypeSystem.Ecma;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
-    public class TrimmerDriver
+    public class ILCompilerDriver
     {
         private const string DefaultSystemModule = "System.Private.CoreLib";
 
-        public void Trim (TrimmerOptions options, ILogWriter logWriter)
+        public void Trim (ILCompilerOptions options, ILogWriter logWriter)
         {
-            //Assembly ilcAssembly = AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName("ilc"));
-            //Type programType = ilcAssembly.GetType("ILCompiler.Program")!;
-            //object programObject = Activator.CreateInstance(programType, nonPublic: true)!;
-            //FieldInfo testLogWriterField = programType.GetField("_testLogWriter", BindingFlags.NonPublic | BindingFlags.Instance)!;
-            //testLogWriterField.SetValue(programObject, logWriter);
-            //MethodInfo runMethod = programType.GetMethod("Run", BindingFlags.NonPublic | BindingFlags.Instance)!;
-            //runMethod.Invoke(programObject, new object[] { new string[] { "@" + rspFilePath } });
-
             ComputeDefaultOptions(out var targetOS, out var targetArchitecture);
             var targetDetails = new TargetDetails(targetArchitecture, targetOS, TargetAbi.CoreRT);
             CompilerTypeSystemContext typeSystemContext =
@@ -120,7 +112,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
             }
         }
 
-        private IReadOnlyCollection<MethodDesc> CreateInitializerList(CompilerTypeSystemContext context, TrimmerOptions options)
+        private IReadOnlyCollection<MethodDesc> CreateInitializerList(CompilerTypeSystemContext context, ILCompilerOptions options)
         {
             List<ModuleDesc> assembliesWithInitalizers = new List<ModuleDesc>();
 
