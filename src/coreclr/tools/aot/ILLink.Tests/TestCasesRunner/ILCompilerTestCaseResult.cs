@@ -7,7 +7,7 @@ using Mono.Linker.Tests.TestCases;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
-    public class TrimmedTestCaseResult
+    public class ILCompilerTestCaseResult
     {
         public readonly TestCase TestCase;
         public readonly NPath InputAssemblyPath;
@@ -17,7 +17,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
         public readonly ManagedCompilationResult CompilationResult;
         public readonly TestLogWriter LogWriter;
 
-        public TrimmedTestCaseResult(TestCase testCase, NPath inputAssemblyPath, NPath expectationsAssemblyPath, TestCaseSandbox sandbox, TestCaseMetadataProvider metadataProvider, ManagedCompilationResult compilationResult, TestLogWriter logWriter)
+        public ILCompilerTestCaseResult(TestCase testCase, NPath inputAssemblyPath, NPath expectationsAssemblyPath, TestCaseSandbox sandbox, TestCaseMetadataProvider metadataProvider, ManagedCompilationResult compilationResult, TestLogWriter logWriter)
         {
             TestCase = testCase;
             InputAssemblyPath = inputAssemblyPath;

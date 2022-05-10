@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
-    public class TrimmerOptions
+    public class ILCompilerOptions
     {
         public Dictionary<string, string> InputFilePaths = new Dictionary<string, string>();
         public Dictionary<string, string> ReferenceFilePaths = new Dictionary<string, string>();

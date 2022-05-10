@@ -45,8 +45,18 @@ namespace ILCompiler
             _singleWarnDisabledAssemblies = new HashSet<string>(singleWarnDisabledModules, StringComparer.OrdinalIgnoreCase);
         }
 
+        public Logger(TextWriter writer, bool isVerbose, IEnumerable<int> suppressedWarnings, bool singleWarn, IEnumerable<string> singleWarnEnabledModules, IEnumerable<string> singleWarnDisabledModules)
+            : this(new TextLogWriter(writer), isVerbose, suppressedWarnings, singleWarn, singleWarnEnabledModules, singleWarnDisabledModules)
+        {
+        }
+
         public Logger(ILogWriter writer, bool isVerbose)
             : this(writer, isVerbose, Array.Empty<int>(), singleWarn: false, Array.Empty<string>(), Array.Empty<string>())
+        {
+        }
+
+        public Logger (TextWriter writer, bool isVerbose)
+            : this(new TextLogWriter(writer), isVerbose)
         {
         }
 
