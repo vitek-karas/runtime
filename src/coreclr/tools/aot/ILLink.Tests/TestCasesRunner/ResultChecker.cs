@@ -377,7 +377,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
             static string? GetActualOriginDisplayName(TypeSystemEntity? entity) => entity switch
             {
                 DefType defType => TrimAssemblyNamePrefix(defType.ToString()),
-                MethodDesc method => TrimAssemblyNamePrefix(GetMethodDescDisplayName(method)),
+                MethodDesc method => TrimAssemblyNamePrefix(method.GetDisplayName()),
                 FieldDesc field => TrimAssemblyNamePrefix(field.ToString()),
                 ModuleDesc module => module.Assembly.GetName().Name,
                 _ => null
@@ -424,19 +424,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
                 return value;
             }
-        }
-
-        static System.Reflection.MethodInfo? s_MethodDesc_GetDisplayName = null;
-
-        static string GetMethodDescDisplayName(MethodDesc methodDesc)
-        {
-            if (s_MethodDesc_GetDisplayName == null)
-            {
-                var type = typeof(FlowAnnotations).Assembly.GetType("ILCompiler.DisplayNameHelpers")!;
-                s_MethodDesc_GetDisplayName = type.GetMethod("GetDisplayName", new Type[] { typeof(MethodDesc) });
-            }
-
-            return (string)s_MethodDesc_GetDisplayName!.Invoke(null, new object[] { methodDesc })!;
         }
 
         static bool HasAttribute(ICustomAttributeProvider caProvider, string attributeName)
