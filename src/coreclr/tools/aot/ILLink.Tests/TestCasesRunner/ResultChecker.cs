@@ -48,7 +48,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
             _linkedReaderParameters = linkedReaderParameters;
         }
 
-        public virtual void Check (TrimmedTestCaseResult trimmedResult)
+        public virtual void Check (ILCompilerTestCaseResult trimmedResult)
         {
             InitializeResolvers (trimmedResult);
 
@@ -60,7 +60,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
             }
         }
 
-        void InitializeResolvers (TrimmedTestCaseResult linkedResult)
+        void InitializeResolvers (ILCompilerTestCaseResult linkedResult)
         {
             _originalsResolver.AddSearchDirectory (linkedResult.ExpectationsAssemblyPath.Parent.ToString ());
         }
@@ -73,7 +73,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
             return _originalsResolver.Resolve (new AssemblyNameReference (cleanAssemblyName, null), _originalReaderParameters);
         }
 
-        protected virtual void AdditionalChecking (TrimmedTestCaseResult linkResult, AssemblyDefinition original)
+        protected virtual void AdditionalChecking (ILCompilerTestCaseResult linkResult, AssemblyDefinition original)
         {
             bool checkRemainingErrors = !HasAttribute(original.MainModule.GetType(linkResult.TestCase.ReconstructedFullTypeName), nameof(SkipRemainingErrorsValidationAttribute));
             VerifyLoggedMessages(original, linkResult.LogWriter, checkRemainingErrors);

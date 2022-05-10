@@ -15,9 +15,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			return new TestCaseCompiler (sandbox, metadataProvider);
 		}
 
-		public virtual TrimmerDriver CreateTrimmer ()
+		public virtual ILCompilerDriver CreateTrimmer ()
 		{
-			return new TrimmerDriver ();
+			return new ILCompilerDriver ();
 		}
 
 		public virtual TestCaseMetadataProvider CreateMetadataProvider (TestCase testCase, AssemblyDefinition expectationsAssemblyDefinition)
@@ -30,9 +30,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			return new TestCaseCompilationMetadataProvider (testCase, fullTestCaseAssemblyDefinition);
 		}
 
-		public virtual TrimmerOptionsBuilder CreateTrimmerOptionsBuilder (TestCaseMetadataProvider metadataProvider)
+		public virtual ILCompilerOptionsBuilder CreateTrimmerOptionsBuilder (TestCaseMetadataProvider metadataProvider)
 		{
-			return new TrimmerOptionsBuilder (metadataProvider);
+			return new ILCompilerOptionsBuilder (metadataProvider);
 		}
 	}
 }
