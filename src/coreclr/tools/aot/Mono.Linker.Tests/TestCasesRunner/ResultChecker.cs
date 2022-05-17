@@ -12,7 +12,7 @@ using FluentAssertions;
 using ILCompiler;
 using ILCompiler.Dataflow;
 using ILCompiler.Logging;
-using ILLink.Tests.TestCasesRunner;
+using Mono.Linker.Tests.TestCasesRunner;
 using Internal.TypeSystem;
 using Mono.Cecil;
 using Mono.Cecil.Cil;

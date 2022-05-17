@@ -76,8 +76,8 @@ namespace Mono.Linker.Tests.TestCases
 
 		static void GetDirectoryPaths (out string rootSourceDirectory, out string testCaseAssemblyPath)
 		{
-			rootSourceDirectory = Path.GetFullPath (Path.Combine (PathUtilities.GetTestsSourceRootDirectory (), "ILLink.Tests.Cases"));
-			testCaseAssemblyPath = PathUtilities.GetTestAssemblyPath ("ILLink.Tests.Cases");
+			rootSourceDirectory = Path.GetFullPath (Path.Combine (PathUtilities.GetTestsSourceRootDirectory (), "Mono.Linker.Tests.Cases"));
+			testCaseAssemblyPath = PathUtilities.GetTestAssemblyPath ("Mono.Linker.Tests.Cases");
 		}
 	}
 }
