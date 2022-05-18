@@ -14,13 +14,16 @@ namespace Mono.Linker.Tests.TestCases
 			Name = sourceFile.FileNameWithoutExtension;
             var fullyRelative = sourceFile.RelativeTo(rootCasesDirectory);
             var displayNameRelative = fullyRelative.RelativeTo(new NPath(fullyRelative.Elements.First()));
-            string displayNameBase = displayNameRelative.Depth == 1 ? "" : displayNameRelative.Parent.ToString(SlashMode.Forward).Replace('/', '.') + ".";
+            string displayNameBase = displayNameRelative.Depth == 1 || displayNameRelative == "." ? "" : displayNameRelative.Parent.ToString(SlashMode.Forward).Replace('/', '.') + ".";
             DisplayName = $"{displayNameBase}{sourceFile.FileNameWithoutExtension}";
 
             // A little hacky, but good enough for name.  No reason why namespace & type names
             // should not follow the directory structure
             //ReconstructedFullTypeName = $"{sourceFile.Parent.RelativeTo (rootCasesDirectory.Parent).ToString (SlashMode.Forward).Replace ('/', '.')}.{sourceFile.FileNameWithoutExtension}";
-            ReconstructedFullTypeName = $"Mono.Linker.Tests.Cases.{fullyRelative.Parent.ToString (SlashMode.Forward).Replace('/', '.')}.{sourceFile.FileNameWithoutExtension}";
+            if(displayNameRelative != ".")
+                ReconstructedFullTypeName = $"Mono.Linker.Tests.Cases.{fullyRelative.Parent.ToString (SlashMode.Forward).Replace('/', '.')}.{sourceFile.FileNameWithoutExtension}";
+            else
+                ReconstructedFullTypeName = $"Mono.Linker.Tests.Cases.{sourceFile.FileNameWithoutExtension}";
 
             var firstParentRelativeToRoot = SourceFile.RelativeTo (rootCasesDirectory).Elements.First ();
 			TestSuiteDirectory = rootCasesDirectory.Combine (firstParentRelativeToRoot);

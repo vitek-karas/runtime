@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Resources;
 using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.TestCasesRunner;
 
@@ -63,6 +65,14 @@ namespace Mono.Linker.Tests.TestCases
         public static TestCase? GetTestCaseFromName(string name)
         {
             return AllCases().FirstOrDefault (c => c.Name == name);
+        }
+
+        public static TestCase? GetTestCaseFromResourceFile(string name)
+        {
+            var testCaseAssemblyPath = PathUtilities.GetTestAssemblyPath("Mono.Linker.Tests.Cases");
+            var assembly = Assembly.LoadFrom (testCaseAssemblyPath);
+            ResourceManager rm = new ResourceManager("Mono.Linker.Tests.Cases.Resources", assembly);
+            return null;
         }
 
 		static IEnumerable<object[]> TestNamesBySuiteName (string suiteName)
