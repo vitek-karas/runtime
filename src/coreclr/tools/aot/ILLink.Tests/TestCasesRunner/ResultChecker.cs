@@ -276,13 +276,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
                                 }
 
                                 var expectedOriginString = fileName == null
-                                    ? attrProvider switch
-                                    {
-                                        MethodDefinition method => method.GetDisplayName(),
-                                        IMemberDefinition member => member.FullName,
-                                        AssemblyDefinition asm => asm.Name.Name,
-                                        _ => throw new NotImplementedException()
-                                    } + ": "
+                                    ? GetExpectedOriginDisplayName(attrProvider) + ": "
                                     : "";
 
                                 Assert.True(expectedWarningFound,
@@ -401,6 +395,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
                 provider switch
                 {
                     MethodDefinition method => method.GetDisplayName(),
+                    FieldDefinition field => field.GetDisplayName(),
                     IMemberDefinition member => member.FullName,
                     AssemblyDefinition asm => asm.Name.Name,
                     _ => throw new NotImplementedException()
