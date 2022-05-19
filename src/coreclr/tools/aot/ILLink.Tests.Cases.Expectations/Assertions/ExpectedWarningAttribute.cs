@@ -15,7 +15,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 		{
 		}
 
-		public string? FileName { get; set; }
+		public string FileName { get; set; }
 		public int SourceLine { get; set; }
 		public int SourceColumn { get; set; }
 
