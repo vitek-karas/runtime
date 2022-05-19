@@ -4,7 +4,7 @@
 using System;
 using System.Reflection.Metadata;
 using System.Text;
-
+using ILCompiler.Dataflow;
 using Internal.TypeSystem;
 using Internal.TypeSystem.Ecma;
 using Debug = System.Diagnostics.Debug;
@@ -38,6 +38,12 @@ namespace ILCompiler
             if (method.IsConstructor)
             {
                 sb.Append(method.OwningType.GetDisplayNameWithoutNamespace());
+            }
+            else if (method.GetPropertyForAccessor() is PropertyPseudoDesc property)
+            {
+                sb.Append(property.Name);
+                sb.Append('.');
+                sb.Append(property.GetMethod.Name == method.Name ? "get" : "set");
             }
             else
             {
