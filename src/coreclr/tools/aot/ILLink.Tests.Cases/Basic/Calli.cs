@@ -9,7 +9,6 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.Basic
 {
     [SetupCompileArgument("/unsafe")]
-    [SkipILVerify] // ILVerify doesn't handle calli
     [KeptMember(".cctor()")]
     public unsafe class Calli
     {
