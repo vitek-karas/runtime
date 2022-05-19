@@ -29,18 +29,20 @@ namespace Mono.Linker.Tests.TestCasesRunner
         readonly ReaderParameters _originalReaderParameters;
         readonly ReaderParameters _linkedReaderParameters;
 
-        public ResultChecker ()
-            : this (new TestCaseAssemblyResolver (),
-                new ReaderParameters {
-                    SymbolReaderProvider = new DefaultSymbolReaderProvider (false)
+        public ResultChecker()
+            : this(new TestCaseAssemblyResolver(),
+                new ReaderParameters
+                {
+                    SymbolReaderProvider = new DefaultSymbolReaderProvider(false)
                 },
-                new ReaderParameters {
-                    SymbolReaderProvider = new DefaultSymbolReaderProvider (false)
+                new ReaderParameters
+                {
+                    SymbolReaderProvider = new DefaultSymbolReaderProvider(false)
                 })
         {
         }
 
-        public ResultChecker (BaseAssemblyResolver originalsResolver,
+        public ResultChecker(BaseAssemblyResolver originalsResolver,
             ReaderParameters originalReaderParameters, ReaderParameters linkedReaderParameters)
         {
             _originalsResolver = originalsResolver;
@@ -48,32 +50,35 @@ namespace Mono.Linker.Tests.TestCasesRunner
             _linkedReaderParameters = linkedReaderParameters;
         }
 
-        public virtual void Check (ILCompilerTestCaseResult trimmedResult)
+        public virtual void Check(ILCompilerTestCaseResult trimmedResult)
         {
-            InitializeResolvers (trimmedResult);
+            InitializeResolvers(trimmedResult);
 
-            try {
-                var original = ResolveOriginalsAssembly (trimmedResult.ExpectationsAssemblyPath.FileNameWithoutExtension);
-                AdditionalChecking (trimmedResult, original);
-            } finally {
-                _originalsResolver.Dispose ();
+            try
+            {
+                var original = ResolveOriginalsAssembly(trimmedResult.ExpectationsAssemblyPath.FileNameWithoutExtension);
+                AdditionalChecking(trimmedResult, original);
+            }
+            finally
+            {
+                _originalsResolver.Dispose();
             }
         }
 
-        void InitializeResolvers (ILCompilerTestCaseResult linkedResult)
+        void InitializeResolvers(ILCompilerTestCaseResult linkedResult)
         {
-            _originalsResolver.AddSearchDirectory (linkedResult.ExpectationsAssemblyPath.Parent.ToString ());
+            _originalsResolver.AddSearchDirectory(linkedResult.ExpectationsAssemblyPath.Parent.ToString());
         }
 
-        protected AssemblyDefinition ResolveOriginalsAssembly (string assemblyName)
+        protected AssemblyDefinition ResolveOriginalsAssembly(string assemblyName)
         {
             var cleanAssemblyName = assemblyName;
-            if (assemblyName.EndsWith (".exe") || assemblyName.EndsWith (".dll"))
-                cleanAssemblyName = Path.GetFileNameWithoutExtension (assemblyName);
-            return _originalsResolver.Resolve (new AssemblyNameReference (cleanAssemblyName, null), _originalReaderParameters);
+            if (assemblyName.EndsWith(".exe") || assemblyName.EndsWith(".dll"))
+                cleanAssemblyName = Path.GetFileNameWithoutExtension(assemblyName);
+            return _originalsResolver.Resolve(new AssemblyNameReference(cleanAssemblyName, null), _originalReaderParameters);
         }
 
-        protected virtual void AdditionalChecking (ILCompilerTestCaseResult linkResult, AssemblyDefinition original)
+        protected virtual void AdditionalChecking(ILCompilerTestCaseResult linkResult, AssemblyDefinition original)
         {
             bool checkRemainingErrors = !HasAttribute(original.MainModule.GetType(linkResult.TestCase.ReconstructedFullTypeName), nameof(SkipRemainingErrorsValidationAttribute));
             VerifyLoggedMessages(original, linkResult.LogWriter, checkRemainingErrors);

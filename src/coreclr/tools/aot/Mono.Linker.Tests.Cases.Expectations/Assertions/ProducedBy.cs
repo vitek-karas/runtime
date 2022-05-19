@@ -5,11 +5,11 @@ using System;
 
 namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 {
-	[Flags]
-	public enum ProducedBy
-	{
-		Trimmer = 1,
-		Analyzer = 2,
-		TrimmerAndAnalyzer = Trimmer | Analyzer
-	}
+    [Flags]
+    public enum ProducedBy
+    {
+        Trimmer = 1,
+        Analyzer = 2,
+        TrimmerAndAnalyzer = Trimmer | Analyzer
+    }
 }
