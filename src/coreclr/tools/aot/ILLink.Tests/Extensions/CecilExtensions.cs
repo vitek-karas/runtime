@@ -243,6 +243,20 @@ namespace Mono.Linker.Tests.Extensions
             return builder.ToString();
         }
 
+        public static string GetDisplayName(this FieldReference field)
+        {
+            var builder = new StringBuilder();
+            if (field.DeclaringType != null)
+            {
+                builder.Append(field.DeclaringType.GetDisplayName());
+                builder.Append(".");
+            }
+
+            builder.Append(field.Name);
+
+            return builder.ToString();
+        }
+
         public static string GetNamespaceDisplayName(this MemberReference member)
         {
             var type = member is TypeReference typeReference ? typeReference : member.DeclaringType;
