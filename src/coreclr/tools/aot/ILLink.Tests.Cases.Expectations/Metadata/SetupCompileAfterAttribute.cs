@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 
 namespace Mono.Linker.Tests.Cases.Expectations.Metadata
 {
@@ -8,7 +11,7 @@ namespace Mono.Linker.Tests.Cases.Expectations.Metadata
 	[AttributeUsage (AttributeTargets.Class, AllowMultiple = true)]
 	public class SetupCompileAfterAttribute : BaseMetadataAttribute
 	{
-		public SetupCompileAfterAttribute (string outputName, string[] sourceFiles, string[]? references = null, string[]? defines = null, object[]? resources = null, string? additionalArguments = null, string? compilerToUse = null, bool addAsReference = true, bool removeFromLinkerInput = false)
+		public SetupCompileAfterAttribute (string outputName, string[] sourceFiles, string[] references = null, string[] defines = null, object[] resources = null, string additionalArguments = null, string compilerToUse = null, bool addAsReference = true, bool removeFromLinkerInput = false)
 		{
 			if (sourceFiles == null)
 				throw new ArgumentNullException (nameof (sourceFiles));
