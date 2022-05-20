@@ -53,12 +53,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
             ilProvider = new FeatureSwitchManager(ilProvider, options.FeatureSwitches);
 
             Logger logger = new Logger(logWriter, isVerbose: true);
-            
+
             UsageBasedMetadataManager metadataManager = new UsageBasedMetadataManager(
                 compilationGroup,
                 typeSystemContext,
-                new FullyBlockedMetadataBlockingPolicy(),
-                new FullyBlockedManifestResourceBlockingPolicy(),
+                new NoMetadataBlockingPolicy(),
+                new ManifestResourceBlockingPolicy(options.FeatureSwitches),
                 logFile: null,
                 new NoStackTraceEmissionPolicy(),
                 new NoDynamicInvokeThunkGenerationPolicy(),
