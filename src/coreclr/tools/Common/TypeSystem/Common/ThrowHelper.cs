@@ -53,6 +53,11 @@ namespace Internal.TypeSystem
             throw new TypeSystemException.InvalidProgramException(id, Format.Method(method));
         }
 
+        public static TypeSystemException GetInvalidProgramException(ExceptionStringID id, MethodDesc method)
+        {
+            return new TypeSystemException.InvalidProgramException(id, Format.Method(method));
+        }
+
         [System.Diagnostics.DebuggerHidden]
         public static void ThrowBadImageFormatException()
         {
