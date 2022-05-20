@@ -119,19 +119,31 @@ namespace ILCompiler
 
             try
             {
-                var importer = new ILImporter(this, method);
-                methodCodeNodeNeedingCode.InitializeDependencies(_nodeFactory, importer.Import());
+                if (GetMethodIL(method) != null)
+                {
+                    var importer = new ILImporter(this, method);
+                    methodCodeNodeNeedingCode.InitializeDependencies(_nodeFactory, importer.Import());
+                }
+                else
+                {
+                    CompileWithThrowingBody(ThrowHelper.GetInvalidProgramException(ExceptionStringID.InvalidProgramSpecific, method));
+                }
             }
             catch (TypeSystemException ex)
             {
                 // Try to compile the method again, but with a throwing method body this time.
-                MethodIL throwingIL = TypeSystemThrowingILEmitter.EmitIL(method, ex);
-                var importer = new ILImporter(this, method, throwingIL);
-                methodCodeNodeNeedingCode.InitializeDependencies(_nodeFactory, importer.Import(), ex);
+                CompileWithThrowingBody(ex);
             }
             catch (Exception ex)
             {
                 throw new CodeGenerationFailedException(method, ex);
+            }
+
+            void CompileWithThrowingBody(TypeSystemException ex)
+            {
+                MethodIL throwingIL = TypeSystemThrowingILEmitter.EmitIL(method, ex);
+                var importer = new ILImporter(this, method, throwingIL);
+                methodCodeNodeNeedingCode.InitializeDependencies(_nodeFactory, importer.Import(), ex);
             }
         }
 
