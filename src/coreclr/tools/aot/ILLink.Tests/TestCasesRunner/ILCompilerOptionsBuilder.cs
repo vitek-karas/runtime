@@ -24,6 +24,15 @@ namespace Mono.Linker.Tests.TestCasesRunner
             AppendExpandedPaths(Options.ReferenceFilePaths, Path.Combine(runtimeBinDir, "aotsdk", "*.dll"));
 
             string runtimePackDir = (string)AppContext.GetData("ILLink.Tests.MicrosoftNetCoreAppRuntimePackDirectory")!;
+            if (!Directory.Exists(runtimePackDir) && runtimePackDir.Contains("Debug"))
+            {
+                // Frequently we'll have a Debug runtime and Release libraries, which actually produces a Release runtime pack
+                // but from within VS we're see Debug everything. So if the runtime pack directory doesn't exist
+                // try the Release path (simple string replace)
+                string candidate = runtimePackDir.Replace("Debug", "Release");
+                if (Directory.Exists(candidate))
+                    runtimePackDir = candidate;
+            }
             AppendExpandedPaths(Options.ReferenceFilePaths, Path.Combine(runtimePackDir, "*.dll"));
 
             Options.InitAssemblies.Add("System.Private.CoreLib");
