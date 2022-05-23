@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using ILCompiler;
-using ILLink.Shared.TrimAnalysis;
+using ILCompiler.Dataflow;
 using Internal.IL;
 using Internal.TypeSystem;
 using Internal.TypeSystem.Ecma;
@@ -20,7 +20,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
         public void Trim (ILCompilerOptions options, ILogWriter logWriter)
         {
             ComputeDefaultOptions(out var targetOS, out var targetArchitecture);
-            var targetDetails = new TargetDetails(targetArchitecture, targetOS, TargetAbi.NativeAot);
+            var targetDetails = new TargetDetails(targetArchitecture, targetOS, TargetAbi.CoreRT);
             CompilerTypeSystemContext typeSystemContext =
                 new CompilerTypeSystemContext(targetDetails, SharedGenericsMode.CanonicalReferenceTypes, DelegateFeature.All);
 
@@ -48,7 +48,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
             compilationRoots.Add(new MainMethodRootProvider(entrypointModule, CreateInitializerList(typeSystemContext, options)));
 
-            ILProvider ilProvider = new NativeAotILProvider();
+            ILProvider ilProvider = new CoreRTILProvider();
 
             ilProvider = new FeatureSwitchManager(ilProvider, options.FeatureSwitches);
 
