@@ -108,6 +108,7 @@ namespace ILCompiler
         {
             if (accessor.GetTypicalMethodDefinition() is not EcmaMethod ecmaAccessor)
                 return null;
+
             var type = (EcmaType)ecmaAccessor.OwningType;
             var reader = type.MetadataReader;
             var module = type.EcmaModule;
