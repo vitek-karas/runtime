@@ -647,11 +647,17 @@ void Lowering::LowerPutArgStk(GenTreePutArgStk* putArgStk)
         MakeSrcContained(putArgStk, src);
     }
 #ifdef TARGET_X86
-    else if ((genTypeSize(src) == TARGET_POINTER_SIZE) && IsContainableMemoryOp(src) &&
-             IsSafeToContainMem(putArgStk, src))
+    else if ((genTypeSize(src) == TARGET_POINTER_SIZE) && IsSafeToContainMem(putArgStk, src))
     {
-        // Contain for "push [mem]".
-        MakeSrcContained(putArgStk, src);
+        // We can use "src" directly from memory with "push [mem]".
+        if (IsContainableMemoryOp(src))
+        {
+            MakeSrcContained(putArgStk, src);
+        }
+        else
+        {
+            src->SetRegOptional();
+        }
     }
 #endif // TARGET_X86
 }
@@ -3945,6 +3951,33 @@ GenTree* Lowering::TryLowerAndOpToAndNot(GenTreeOp* andNode)
     return andnNode;
 }
 
+//----------------------------------------------------------------------------------------------
+// Lowering::LowerBswapOp: Tries to contain GT_BSWAP node when possible
+//
+// Arguments:
+//    node - GT_BSWAP node to contain
+//
+// Notes:
+//    Containment is not performed when optimizations are disabled
+//    or when MOVBE instruction set is not found
+//
+void Lowering::LowerBswapOp(GenTreeOp* node)
+{
+    assert(node->OperIs(GT_BSWAP, GT_BSWAP16));
+
+    if (!comp->opts.OptimizationEnabled() || !comp->compOpportunisticallyDependsOn(InstructionSet_MOVBE))
+    {
+        return;
+    }
+
+    GenTree* operand  = node->gtGetOp1();
+    unsigned swapSize = node->OperIs(GT_BSWAP16) ? 2 : genTypeSize(node);
+    if ((swapSize == genTypeSize(operand)) && IsContainableMemoryOp(operand) && IsSafeToContainMem(node, operand))
+    {
+        MakeSrcContained(node, operand);
+    }
+}
+
 #endif // FEATURE_HW_INTRINSICS
 
 //----------------------------------------------------------------------------------------------
@@ -4575,6 +4608,20 @@ void Lowering::ContainCheckStoreIndir(GenTreeStoreInd* node)
         MakeSrcContained(node, src);
     }
 
+    // If the source is a BSWAP, contain it on supported hardware to generate a MOVBE.
+    if (comp->opts.OptimizationEnabled() && src->OperIs(GT_BSWAP, GT_BSWAP16) &&
+        comp->compOpportunisticallyDependsOn(InstructionSet_MOVBE))
+    {
+        unsigned swapSize = src->OperIs(GT_BSWAP16) ? 2 : genTypeSize(src);
+        if ((swapSize == genTypeSize(node)) && IsSafeToContainMem(node, src))
+        {
+            // Prefer containing in the store in case the load has been contained.
+            src->gtGetOp1()->ClearContained();
+
+            MakeSrcContained(node, src);
+        }
+    }
+
     ContainCheckIndir(node);
 }
 
@@ -4803,7 +4850,7 @@ void Lowering::ContainCheckShiftRotate(GenTreeOp* node)
         assert(source->OperGet() == GT_LONG);
         MakeSrcContained(node, source);
     }
-#endif // !TARGET_X86
+#endif
 
     GenTree* shiftBy = node->gtOp2;
     if (IsContainableImmed(node, shiftBy) && (shiftBy->AsIntConCommon()->IconValue() <= 255) &&
@@ -5646,7 +5693,7 @@ bool Lowering::TryGetContainableHWIntrinsicOp(GenTreeHWIntrinsic* containingNode
                 case NI_AVX_InsertVector128:
                 case NI_AVX2_InsertVector128:
                 {
-                    // InsertVector128 is special in that that it returns a TYP_SIMD32 but takes a TYP_SIMD16
+                    // InsertVector128 is special in that it returns a TYP_SIMD32 but takes a TYP_SIMD16.
                     assert(!supportsSIMDScalarLoads);
 
                     const unsigned expectedSize = 16;
