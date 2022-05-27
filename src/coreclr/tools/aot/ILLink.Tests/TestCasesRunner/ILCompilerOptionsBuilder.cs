@@ -39,7 +39,6 @@ namespace Mono.Linker.Tests.TestCasesRunner
             Options.InitAssemblies.Add("System.Private.StackTraceMetadata");
             Options.InitAssemblies.Add("System.Private.TypeLoader");
             Options.InitAssemblies.Add("System.Private.Reflection.Execution");
-            Options.InitAssemblies.Add("System.Private.Interop");
 
             Options.FeatureSwitches.Add("System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization", false);
             Options.FeatureSwitches.Add("System.Resources.ResourceManager.AllowCustomResourceTypes", false);
