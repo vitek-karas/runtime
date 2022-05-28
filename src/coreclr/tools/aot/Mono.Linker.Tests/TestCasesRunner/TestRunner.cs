@@ -4,7 +4,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using ILLink.Tests.TestCasesRunner;
+using Mono.Linker.Tests.TestCasesRunner;
 using Mono.Cecil;
 using Mono.Linker.Tests.Extensions;
 using Mono.Linker.Tests.TestCases;

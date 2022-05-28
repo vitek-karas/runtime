@@ -20,14 +20,14 @@
 
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
     <PackageReference Include="System.Reflection.MetadataLoadContext" Version="5.0.1" />
-    <ProjectReference Include="../ILLink.Tests.Cases/ILLink.Tests.Cases.csproj" />
-    <ProjectReference Include="../ILLink.Tests.Cases.Expectations/ILLink.Tests.Cases.Expectations.csproj" />
+    <ProjectReference Include="../Mono.Linker.Tests.Cases/Mono.Linker.Tests.Cases.csproj" />
+    <ProjectReference Include="../Mono.Linker.Tests.Cases.Expectations/Mono.Linker.Tests.Cases.Expectations.csproj" />
     <ProjectReference Include="../ILCompiler/ILCompiler.csproj" />
 
-    <RuntimeHostConfigurationOption Include="ILLink.Tests.RuntimeBinDirectory">
+    <RuntimeHostConfigurationOption Include="Mono.Linker.Tests.RuntimeBinDirectory">
       <Value>$(RuntimeBinDir)</Value>
     </RuntimeHostConfigurationOption>
-    <RuntimeHostConfigurationOption Include="ILLink.Tests.MicrosoftNetCoreAppRuntimePackDirectory">
+    <RuntimeHostConfigurationOption Include="Mono.Linker.Tests.MicrosoftNetCoreAppRuntimePackDirectory">
       <Value>$(MicrosoftNetCoreAppRuntimePackRidLibTfmDir)</Value>
     </RuntimeHostConfigurationOption>
   </ItemGroup>
