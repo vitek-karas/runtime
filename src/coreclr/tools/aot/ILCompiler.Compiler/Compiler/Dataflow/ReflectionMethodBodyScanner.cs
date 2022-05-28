@@ -2978,6 +2978,9 @@ namespace ILCompiler.Dataflow
                 }
             }
 
+            CheckAndReportRequires(method, new MessageOrigin(reflectionContext.Source), RequiresUnreferencedCodeAttribute);
+            CheckAndReportRequires(method, new MessageOrigin(reflectionContext.Source), RequiresDynamicCodeAttribute);
+
             if (_flowAnnotations.ShouldWarnWhenAccessedForReflection(method) && !ShouldSuppressAnalysisWarningsForRequires(method, RequiresUnreferencedCodeAttribute))
             {
                 WarnOnReflectionAccess(ref reflectionContext, method);

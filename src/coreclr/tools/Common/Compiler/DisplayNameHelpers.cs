@@ -2,9 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Text;
-using ILCompiler.Dataflow;
+//using ILCompiler.Dataflow;
 using Internal.TypeSystem;
 using Internal.TypeSystem.Ecma;
 using Debug = System.Diagnostics.Debug;
@@ -39,12 +40,12 @@ namespace ILCompiler
             {
                 sb.Append(method.OwningType.GetDisplayNameWithoutNamespace());
             }
-            else if (method.GetPropertyForAccessor() is PropertyPseudoDesc property)
+            /*else if (method.GetPropertyForAccessor() is PropertyPseudoDesc property)
             {
                 sb.Append(property.Name);
                 sb.Append('.');
                 sb.Append(property.GetMethod.Name == method.Name ? "get" : "set");
-            }
+            }*/
             else
             {
                 sb.Append(method.Name);
@@ -119,12 +120,136 @@ namespace ILCompiler
 
         public static string GetDisplayName(this TypeDesc type)
         {
-            return Formatter.Instance.FormatName(type, FormatOptions.NamespaceQualify);
+            var sb = new StringBuilder();
+            if (type == null)
+                return sb.ToString();
+
+            Stack<TypeDesc> genericArguments = null;
+            //while (true)
+            //{
+            switch (type)
+            {
+                /*case ArrayType arrayType:
+                    AppendArrayType(arrayType, sb);
+                    break;
+                case GenericInstanceType genericInstanceType:
+                    genericArguments = new Stack<TypeReference>(genericInstanceType.GenericArguments);
+                    type = genericInstanceType.ElementType;
+                    continue;*/
+                default:
+                    string simpleName = Formatter.Instance.FormatName(type, FormatOptions.NamespaceQualify);
+                    if (type.HasInstantiation)
+                    {
+                        int genericParametersCount = type.Instantiation.Length;
+                        int declaringTypeGenericParametersCount = 0;
+                        if (type is DefType defType)
+                            declaringTypeGenericParametersCount = defType.ContainingType?.Instantiation.Length ?? 0;
+
+                        if (genericParametersCount > declaringTypeGenericParametersCount)
+                        {
+                            if (genericArguments?.Count > 0)
+                                PrependGenericArguments(genericArguments, genericParametersCount - declaringTypeGenericParametersCount, sb);
+                            else
+                                PrependGenericParameters(type.Instantiation, sb);
+
+                            int explicitArityIndex = simpleName.IndexOf('`');
+                            simpleName = explicitArityIndex != -1 ? simpleName.Substring(0, explicitArityIndex) : simpleName;
+                        }
+                    }
+
+                    sb.Insert(0, simpleName);
+                    break;
+            }
+
+            /*if (type.DeclaringType is not TypeReference declaringType)
+                break;
+
+            type = declaringType;
+
+            sb.Insert(0, '.');*/
+            //}
+
+            return sb.ToString();
         }
 
         public static string GetDisplayNameWithoutNamespace(this TypeDesc type)
         {
             return Formatter.Instance.FormatName(type, FormatOptions.None);
+        }
+
+        /*public static StringBuilder GetDisplayNameWithoutNamespace(this TypeReference type)
+        {
+            var sb = new StringBuilder();
+            if (type == null)
+                return sb;
+
+            Stack<TypeReference>? genericArguments = null;
+            while (true)
+            {
+                switch (type)
+                {
+                    case ArrayType arrayType:
+                        AppendArrayType(arrayType, sb);
+                        break;
+                    case GenericInstanceType genericInstanceType:
+                        genericArguments = new Stack<TypeReference>(genericInstanceType.GenericArguments);
+                        type = genericInstanceType.ElementType;
+                        continue;
+                    default:
+                        if (type.HasGenericParameters)
+                        {
+                            int genericParametersCount = type.GenericParameters.Count;
+                            int declaringTypeGenericParametersCount = type.DeclaringType?.GenericParameters?.Count ?? 0;
+
+                            string simpleName;
+                            if (genericParametersCount > declaringTypeGenericParametersCount)
+                            {
+                                if (genericArguments?.Count > 0)
+                                    PrependGenericArguments(genericArguments, genericParametersCount - declaringTypeGenericParametersCount, sb);
+                                else
+                                    PrependGenericParameters(type.GenericParameters.Skip(declaringTypeGenericParametersCount).ToList(), sb);
+
+                                int explicitArityIndex = type.Name.IndexOf('`');
+                                simpleName = explicitArityIndex != -1 ? type.Name.Substring(0, explicitArityIndex) : type.Name;
+                            }
+                            else
+                                simpleName = type.Name;
+
+                            sb.Insert(0, simpleName);
+                            break;
+                        }
+
+                        sb.Insert(0, type.Name);
+                        break;
+                }
+
+                if (type.DeclaringType is not TypeReference declaringType)
+                    break;
+
+                type = declaringType;
+
+                sb.Insert(0, '.');
+            }
+
+            return sb;
+        }*/
+
+        internal static void PrependGenericParameters(Instantiation genericParameters, StringBuilder sb)
+        {
+            sb.Insert(0, '>').Insert(0, genericParameters[genericParameters.Length - 1]);
+            for (int i = genericParameters.Length - 2; i >= 0; i--)
+                sb.Insert(0, ',').Insert(0, genericParameters[i]);
+
+            sb.Insert(0, '<');
+        }
+
+        static void PrependGenericArguments(Stack<TypeDesc> genericArguments, int argumentsToTake, StringBuilder sb)
+        {
+            sb.Insert(0, '>').Insert(0, genericArguments.Pop().GetDisplayNameWithoutNamespace().ToString());
+            while (--argumentsToTake > 0)
+                sb.Insert(0, ',').Insert(0, genericArguments.Pop().GetDisplayNameWithoutNamespace().ToString());
+
+            sb.Insert(0, '<');
         }
 
         private class Formatter : TypeNameFormatter<Formatter.Unit, FormatOptions>

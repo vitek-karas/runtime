@@ -35,6 +35,11 @@ namespace Mono.Linker.Tests.TestCases
             return TestNamesBySuiteName("DataFlow");
         }
 
+        public static IEnumerable<object[]> RequiresCapability()
+        {
+            return TestNamesBySuiteName("RequiresCapability");
+        }
+
         public static TestCaseCollector CreateCollector()
         {
             GetDirectoryPaths(out string rootSourceDirectory, out string testCaseAssemblyPath);

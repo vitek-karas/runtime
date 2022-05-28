@@ -84,10 +84,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
             VerifyLoggedMessages(original, linkResult.LogWriter, checkRemainingErrors);
         }
 
-        static bool IsProducedByLinker(CustomAttribute attr)
+        static bool IsProducedByNativeAOT(CustomAttribute attr)
         {
             var producedBy = attr.GetPropertyValue("ProducedBy");
-            return producedBy is null ? true : ((ProducedBy)producedBy).HasFlag(ProducedBy.Trimmer);
+            return producedBy is null ? true : ((ProducedBy)producedBy).HasFlag(ProducedBy.NativeAot);
         }
 
         static IEnumerable<ICustomAttributeProvider> GetAttributeProviders(AssemblyDefinition assembly)
@@ -114,7 +114,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
             {
                 foreach (var attr in attrProvider.CustomAttributes)
                 {
-                    if (!IsProducedByLinker(attr))
+                    if (!IsProducedByNativeAOT(attr))
                         continue;
 
                     switch (attr.AttributeType.Name)
