@@ -20,10 +20,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
             Options = new ILCompilerOptions();
 			_metadataProvider = metadataProvider;
 
-            string runtimeBinDir = (string)AppContext.GetData("ILLink.Tests.RuntimeBinDirectory")!;
+            string runtimeBinDir = (string)AppContext.GetData("Mono.Linker.Tests.RuntimeBinDirectory")!;
             AppendExpandedPaths(Options.ReferenceFilePaths, Path.Combine(runtimeBinDir, "aotsdk", "*.dll"));
 
-            string runtimePackDir = (string)AppContext.GetData("ILLink.Tests.MicrosoftNetCoreAppRuntimePackDirectory")!;
+            string runtimePackDir = (string)AppContext.GetData("Mono.Linker.Tests.MicrosoftNetCoreAppRuntimePackDirectory")!;
             if (!Directory.Exists(runtimePackDir) && runtimePackDir.Contains("Debug"))
             {
                 // Frequently we'll have a Debug runtime and Release libraries, which actually produces a Release runtime pack

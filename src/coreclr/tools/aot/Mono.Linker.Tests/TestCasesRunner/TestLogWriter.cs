@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using ILCompiler;
 using ILCompiler.Logging;
 
-namespace ILLink.Tests.TestCasesRunner
+namespace Mono.Linker.Tests.TestCasesRunner
 {
     public class TestLogWriter : ILogWriter
     {

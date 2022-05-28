@@ -22,11 +22,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ILCompiler.Compiler.Tests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ILCompiler.TypeSystem.Tests", "ILCompiler.TypeSystem.Tests\ILCompiler.TypeSystem.Tests.csproj", "{740CDFF4-B8EC-4A37-951B-C9FE9980EF2A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ILLink.Tests", "ILLink.Tests\ILLink.Tests.csproj", "{4CF2ECD3-A1C3-4A28-AB08-A61C53114143}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.Linker.Tests", "Mono.Linker.Tests\Mono.Linker.Tests.csproj", "{4CF2ECD3-A1C3-4A28-AB08-A61C53114143}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ILLink.Tests.Cases", "ILLink.Tests.Cases\ILLink.Tests.Cases.csproj", "{13F90593-7DF6-4B16-B6C1-283905C05A6A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.Linker.Tests.Cases", "Mono.Linker.Tests.Cases\Mono.Linker.Tests.Cases.csproj", "{13F90593-7DF6-4B16-B6C1-283905C05A6A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ILLink.Tests.Cases.Expectations", "ILLink.Tests.Cases.Expectations\ILLink.Tests.Cases.Expectations.csproj", "{26C08C03-921E-4795-AA0B-F3049416E300}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mono.Linker.Tests.Cases.Expectations", "Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj", "{26C08C03-921E-4795-AA0B-F3049416E300}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

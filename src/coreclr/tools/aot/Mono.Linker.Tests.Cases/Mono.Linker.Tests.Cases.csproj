@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ILLink.Tests.Cases.Expectations\ILLink.Tests.Cases.Expectations.csproj" />
+    <ProjectReference Include="..\Mono.Linker.Tests.Cases.Expectations\Mono.Linker.Tests.Cases.Expectations.csproj" />
   </ItemGroup>
 
 </Project>
