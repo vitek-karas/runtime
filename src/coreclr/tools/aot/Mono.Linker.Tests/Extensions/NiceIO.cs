@@ -314,8 +314,8 @@ namespace Mono.Linker.Tests.Extensions
 
 		public bool Equals (NPath? p)
 		{
-            if (p == null)
-                return false;
+			if (p == null)
+				return false;
 
 			if (p._isRelative != _isRelative)
 				return false;
