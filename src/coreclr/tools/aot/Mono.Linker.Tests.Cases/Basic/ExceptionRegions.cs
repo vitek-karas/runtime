@@ -6,47 +6,39 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Basic
 {
-    [Kept]
-    public class ExceptionRegions
-    {
-        [Kept]
-        static void Main()
-        {
-            try
-            {
-                A();
-            }
-            catch (CustomException ce)
-            {
-                Console.WriteLine(ce.Message);
-                try
-                {
-                    B();
-                }
-                catch (Exception e) when (e.InnerException != null)
-                {
-                    Console.WriteLine(e.Message);
-                }
-            }
-            finally
-            {
-                C();
-            }
-        }
+	[Kept]
+	public class ExceptionRegions
+	{
+		[Kept]
+		static void Main ()
+		{
+			try {
+				A ();
+			} catch (CustomException ce) {
+				Console.WriteLine (ce.Message);
+				try {
+					B ();
+				} catch (Exception e) when (e.InnerException != null) {
+					Console.WriteLine (e.Message);
+				}
+			} finally {
+				C ();
+			}
+		}
 
-        [Kept]
-        static void A() { }
+		[Kept]
+		static void A () { }
 
-        [Kept]
-        static void B() { }
+		[Kept]
+		static void B () { }
 
-        [Kept]
-        static void C() { }
-    }
+		[Kept]
+		static void C () { }
+	}
 
-    [Kept]
-    [KeptBaseType(typeof(Exception))]
-    class CustomException : Exception
-    {
-    }
+	[Kept]
+	[KeptBaseType (typeof (Exception))]
+	class CustomException : Exception
+	{
+	}
 }

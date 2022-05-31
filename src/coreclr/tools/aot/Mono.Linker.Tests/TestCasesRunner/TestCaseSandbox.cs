@@ -12,13 +12,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		protected readonly TestCase _testCase;
 		protected readonly NPath _directory;
 
-        static readonly string _linkerAssemblyPath = "";//typeof (Trimmer).Assembly.Location;
+		static readonly string _linkerAssemblyPath = "";//typeof (Trimmer).Assembly.Location;
 
 		static NPath GetArtifactsTestPath ()
 		{
-            // Converts paths like /root-folder/runtime/artifacts/bin/Mono.Linker.Tests/x64/Debug/Mono.Linker.Tests.dll
-            // to /root-folder/runtime/artifacts/bin/ILLink.testcases/
-            string artifacts = Path.GetFullPath (Path.Combine (Path.GetDirectoryName (typeof(TestCaseSandbox).Assembly.Location)!, "..", "..", ".."));
+			// Converts paths like /root-folder/runtime/artifacts/bin/Mono.Linker.Tests/x64/Debug/Mono.Linker.Tests.dll
+			// to /root-folder/runtime/artifacts/bin/ILLink.testcases/
+			string artifacts = Path.GetFullPath (Path.Combine (Path.GetDirectoryName (typeof (TestCaseSandbox).Assembly.Location)!, "..", "..", ".."));
 			string tests = Path.Combine (artifacts, "ILLink.testcases");
 			return new NPath (tests);
 		}

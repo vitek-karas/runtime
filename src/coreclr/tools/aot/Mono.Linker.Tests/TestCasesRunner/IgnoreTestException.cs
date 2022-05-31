@@ -5,8 +5,8 @@ using System;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
-    internal class IgnoreTestException : Exception
-    {
-        public IgnoreTestException(string message) : base(message) { }
-    }
+	internal class IgnoreTestException : Exception
+	{
+		public IgnoreTestException (string message) : base (message) { }
+	}
 }

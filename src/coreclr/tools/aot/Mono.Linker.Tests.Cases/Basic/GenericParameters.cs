@@ -2,18 +2,18 @@
 
 namespace Mono.Linker.Tests.Cases.Basic
 {
-    [Kept]
+	[Kept]
 	class GenericParameters
 	{
-        [Kept]
-        public static void Main()
-        {
-            var t = typeof(A<>).ToString();
-        }
+		[Kept]
+		public static void Main ()
+		{
+			var t = typeof (A<>).ToString ();
+		}
 
-        [Kept]
-        class A<T>
-        {
-        }
-    }
+		[Kept]
+		class A<T>
+		{
+		}
+	}
 }

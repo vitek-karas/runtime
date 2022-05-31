@@ -1,6 +1,6 @@
 ﻿namespace TypeRefToAssembly_Library
 {
-    public class TestType
-    {
-    }
+	public class TestType
+	{
+	}
 }

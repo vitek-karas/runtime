@@ -25,7 +25,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			this.originalAssembly = original;
 			this.linkedAssembly = linked;
-            this.linkedMembers = new(StringComparer.Ordinal);
+			this.linkedMembers = new (StringComparer.Ordinal);
 
 			checkNames = original.MainModule.GetTypeReferences ().Any (attr =>
 				attr.Name == nameof (RemovedNameValueAttribute));
@@ -44,10 +44,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			VerifyResources (originalAssembly, linkedAssembly);
 			VerifyReferences (originalAssembly, linkedAssembly);
 
-			foreach (var s in linkedAssembly.MainModule.AllMembers ().Select (s => s.FullName))
-            {
-                this.linkedMembers.Add(s);
-            }
+			foreach (var s in linkedAssembly.MainModule.AllMembers ().Select (s => s.FullName)) {
+				this.linkedMembers.Add (s);
+			}
 
 			var membersToAssert = originalAssembly.MainModule.Types;
 			foreach (var originalMember in membersToAssert) {
@@ -72,12 +71,11 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		protected virtual void VerifyModule (ModuleDefinition original, ModuleDefinition? linked)
 		{
-            // We never link away a module today so let's make sure the linked one isn't null
-            if (linked == null)
-            {
-                Assert.True(false, $"Linked assembly `{original.Assembly.Name.Name}` is missing module `{original.Name}`");
-                return;
-            }
+			// We never link away a module today so let's make sure the linked one isn't null
+			if (linked == null) {
+				Assert.True (false, $"Linked assembly `{original.Assembly.Name.Name}` is missing module `{original.Name}`");
+				return;
+			}
 
 			var expected = original.Assembly.MainModule.AllDefinedTypes ()
 				.SelectMany (t => GetCustomAttributeCtorValues<string> (t, nameof (KeptModuleReferenceAttribute)))
@@ -87,7 +85,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				.Select (name => name.Name)
 				.ToArray ();
 
-            Assert.Equal(expected, actual);
+			Assert.Equal (expected, actual);
 
 			VerifyCustomAttributes (original, linked);
 		}
@@ -128,19 +126,18 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				foreach (var attr in original.CustomAttributes.Where (l => l.AttributeType.Name == nameof (CreatedMemberAttribute))) {
 					var newName = original.FullName + "::" + attr.ConstructorArguments[0].Value.ToString ();
 
-                    if (linkedMembers!.RemoveWhere(l => l.Contains(newName)) != 1)
-					    Assert.True (false, $"Newly created member '{newName}' was not found");
+					if (linkedMembers!.RemoveWhere (l => l.Contains (newName)) != 1)
+						Assert.True (false, $"Newly created member '{newName}' was not found");
 				}
 			}
 		}
 
 		protected virtual void VerifyTypeDefinitionKept (TypeDefinition original, TypeDefinition? linked)
 		{
-            if (linked == null)
-            {
-                Assert.True(false, $"Type `{original}' should have been kept");
-                return;
-            }
+			if (linked == null) {
+				Assert.True (false, $"Type `{original}' should have been kept");
+				return;
+			}
 
 			if (!original.IsInterface)
 				VerifyBaseType (original, linked);
@@ -199,10 +196,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				expectedBaseName = GetCustomAttributeCtorValues<object> (src, nameof (KeptBaseTypeAttribute)).FirstOrDefault ()?.ToString () ?? defaultBaseType;
 			}
 
-            if (expectedBaseName != linked.BaseType?.FullName)
-            {
-                Assert.True(false, $"Incorrect base type on : {linked.Name}. Expected {expectedBaseName}, actual {linked.BaseType?.FullName}");
-            }
+			if (expectedBaseName != linked.BaseType?.FullName) {
+				Assert.True (false, $"Incorrect base type on : {linked.Name}. Expected {expectedBaseName}, actual {linked.BaseType?.FullName}");
+			}
 		}
 
 		void VerifyInterfaces (TypeDefinition src, TypeDefinition linked)
@@ -219,8 +215,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					}
 				}
 
-                if (expectedInterfaces.Count != 0)
-    				Assert.True (false, $"Expected interfaces were not found on {src}");
+				if (expectedInterfaces.Count != 0)
+					Assert.True (false, $"Expected interfaces were not found on {src}");
 			}
 		}
 
@@ -263,16 +259,14 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		void VerifyFieldKept (FieldDefinition src, FieldDefinition? linked)
 		{
-            if (linked == null)
-            {
-                Assert.True(false, $"Field `{src}' should have been kept");
-                return;
-            }
+			if (linked == null) {
+				Assert.True (false, $"Field `{src}' should have been kept");
+				return;
+			}
 
-            if (!object.Equals(src.Constant, linked.Constant))
-            {
-                Assert.True(false, $"Field '{src}' value doesn's match. Expected {src.Constant}, actual {linked.Constant}");
-            }
+			if (!object.Equals (src.Constant, linked.Constant)) {
+				Assert.True (false, $"Field '{src}' value doesn's match. Expected {src.Constant}, actual {linked.Constant}");
+			}
 
 			VerifyPseudoAttributes (src, linked);
 			VerifyCustomAttributes (src, linked);
@@ -291,16 +285,14 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				return;
 			}
 
-            if (linked == null)
-            {
-                Assert.True(false, $"Property `{src}' should have been kept");
-                return;
-            }
+			if (linked == null) {
+				Assert.True (false, $"Property `{src}' should have been kept");
+				return;
+			}
 
-            if (src.Constant != linked.Constant)
-            {
-                Assert.True(false, $"Property '{src}' value doesn's match. Expected {src.Constant}, actual {linked.Constant}");
-            }
+			if (src.Constant != linked.Constant) {
+				Assert.True (false, $"Property '{src}' value doesn's match. Expected {src.Constant}, actual {linked.Constant}");
+			}
 
 			VerifyPseudoAttributes (src, linked);
 			VerifyCustomAttributes (src, linked);
@@ -319,11 +311,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				return;
 			}
 
-            if (linked == null)
-            {
-                Assert.True(false, $"Event `{src}' should have been kept");
-                return;
-            }
+			if (linked == null) {
+				Assert.True (false, $"Event `{src}' should have been kept");
+				return;
+			}
 
 			if (src.CustomAttributes.Any (attr => attr.AttributeType.Name == nameof (KeptEventAddMethodAttribute))) {
 				VerifyMethodInternal (src.AddMethod, linked.AddMethod, true);
@@ -379,11 +370,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				srcField = src.DeclaringType.Fields.FirstOrDefault (f => f.Name == backingFieldName);
 			}
 
-            if (srcField == null)
-            {
-                Assert.True(false, $"{src.MetadataToken.TokenType} `{src}', could not locate the expected backing field {backingFieldName}");
-                return;
-            }
+			if (srcField == null) {
+				Assert.True (false, $"{src.MetadataToken.TokenType} `{src}', could not locate the expected backing field {backingFieldName}");
+				return;
+			}
 
 			VerifyFieldKept (srcField, linkedType?.Fields.FirstOrDefault (l => srcField.Name == l.Name));
 			verifiedGeneratedFields.Add (srcField.FullName);
@@ -392,11 +382,10 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		protected virtual void VerifyMethodKept (MethodDefinition src, MethodDefinition? linked)
 		{
-            if (linked == null)
-            {
-                Assert.True(false, $"Method `{src.FullName}' should have been kept");
-                return;
-            }
+			if (linked == null) {
+				Assert.True (false, $"Method `{src.FullName}' should have been kept");
+				return;
+			}
 
 			VerifyPseudoAttributes (src, linked);
 			VerifyGenericParameters (src, linked);
@@ -468,81 +457,76 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				result.Add ((null, text));
 		}
 
-        static string FormatInstruction(Instruction instr)
-        {
-            switch (instr.OpCode.FlowControl)
-            {
-                case FlowControl.Branch:
-                case FlowControl.Cond_Branch:
-                    if (instr.Operand is Instruction target)
-                        return $"{instr.OpCode.ToString()} il_{target.Offset.ToString("x")}";
+		static string FormatInstruction (Instruction instr)
+		{
+			switch (instr.OpCode.FlowControl) {
+			case FlowControl.Branch:
+			case FlowControl.Cond_Branch:
+				if (instr.Operand is Instruction target)
+					return $"{instr.OpCode.ToString ()} il_{target.Offset.ToString ("x")}";
 
-                    break;
-            }
+				break;
+			}
 
-            switch (instr.OpCode.Code)
-            {
-                case Code.Ldc_I4:
-                    if (instr.Operand is int ivalue)
-                        return $"{instr.OpCode.ToString()} 0x{ivalue.ToString("x")}";
+			switch (instr.OpCode.Code) {
+			case Code.Ldc_I4:
+				if (instr.Operand is int ivalue)
+					return $"{instr.OpCode.ToString ()} 0x{ivalue.ToString ("x")}";
 
-                    throw new NotImplementedException(instr.Operand.GetType().ToString());
-                case Code.Ldc_I4_S:
-                    if (instr.Operand is sbyte bvalue)
-                        return $"{instr.OpCode.ToString()} 0x{bvalue.ToString("x")}";
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
+			case Code.Ldc_I4_S:
+				if (instr.Operand is sbyte bvalue)
+					return $"{instr.OpCode.ToString ()} 0x{bvalue.ToString ("x")}";
 
-                    throw new NotImplementedException(instr.Operand.GetType().ToString());
-                case Code.Ldc_I8:
-                    if (instr.Operand is long lvalue)
-                        return $"{instr.OpCode.ToString()} 0x{lvalue.ToString("x")}";
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
+			case Code.Ldc_I8:
+				if (instr.Operand is long lvalue)
+					return $"{instr.OpCode.ToString ()} 0x{lvalue.ToString ("x")}";
 
-                    throw new NotImplementedException(instr.Operand.GetType().ToString());
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
 
-                case Code.Ldc_R4:
-                    if (instr.Operand is float fvalue)
-                        return $"{instr.OpCode.ToString()} {fvalue.ToString()}";
+			case Code.Ldc_R4:
+				if (instr.Operand is float fvalue)
+					return $"{instr.OpCode.ToString ()} {fvalue.ToString ()}";
 
-                    throw new NotImplementedException(instr.Operand.GetType().ToString());
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
 
-                case Code.Ldc_R8:
-                    if (instr.Operand is double dvalue)
-                        return $"{instr.OpCode.ToString()} {dvalue.ToString()}";
+			case Code.Ldc_R8:
+				if (instr.Operand is double dvalue)
+					return $"{instr.OpCode.ToString ()} {dvalue.ToString ()}";
 
-                    throw new NotImplementedException(instr.Operand.GetType().ToString());
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
 
-                case Code.Ldstr:
-                    if (instr.Operand is string svalue)
-                        return $"{instr.OpCode.ToString()} '{svalue}'";
+			case Code.Ldstr:
+				if (instr.Operand is string svalue)
+					return $"{instr.OpCode.ToString ()} '{svalue}'";
 
-                    throw new NotImplementedException(instr.Operand.GetType().ToString());
+				throw new NotImplementedException (instr.Operand.GetType ().ToString ());
 
-                default:
-                    {
-                        string? operandString = null;
-                        switch (instr.OpCode.OperandType)
-                        {
-                            case OperandType.InlineField:
-                            case OperandType.InlineMethod:
-                            case OperandType.InlineType:
-                            case OperandType.InlineTok:
-                                operandString = instr.Operand switch
-                                {
-                                    FieldReference fieldRef => fieldRef.FullName,
-                                    MethodReference methodRef => methodRef.FullName,
-                                    TypeReference typeRef => typeRef.FullName,
-                                    _ => null
-                                };
-                                break;
-                        }
+			default: {
+					string? operandString = null;
+					switch (instr.OpCode.OperandType) {
+					case OperandType.InlineField:
+					case OperandType.InlineMethod:
+					case OperandType.InlineType:
+					case OperandType.InlineTok:
+						operandString = instr.Operand switch {
+							FieldReference fieldRef => fieldRef.FullName,
+							MethodReference methodRef => methodRef.FullName,
+							TypeReference typeRef => typeRef.FullName,
+							_ => null
+						};
+						break;
+					}
 
-                        if (operandString != null)
-                            return $"{instr.OpCode.ToString()} {operandString}";
-                        else
-                            return instr.OpCode.ToString();
-                    }
-            }
-        }
-        static void VerifyLocals (MethodDefinition src, MethodDefinition linked)
+					if (operandString != null)
+						return $"{instr.OpCode.ToString ()} {operandString}";
+					else
+						return instr.OpCode.ToString ();
+				}
+			}
+		}
+		static void VerifyLocals (MethodDefinition src, MethodDefinition linked)
 		{
 			VerifyBodyProperties (
 				src,
@@ -564,12 +548,12 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			var srcValues = valueCollector (src);
 
 			if (src.CustomAttributes.Any (attr => attr.AttributeType.Name == expectModifiedAttributeName)) {
-                linkedValues.Should().BeEquivalentTo(srcValues, $"Expected method `{src} to have {propertyDescription} modified, however, the {propertyDescription} were the same as the original\n{FormattingUtils.FormatSequenceCompareFailureMessage(linkedValues, srcValues)}");
+				linkedValues.Should ().BeEquivalentTo (srcValues, $"Expected method `{src} to have {propertyDescription} modified, however, the {propertyDescription} were the same as the original\n{FormattingUtils.FormatSequenceCompareFailureMessage (linkedValues, srcValues)}");
 			} else if (expectedSequenceAttribute != null) {
 				var expected = getExpectFromSequenceAttribute (expectedSequenceAttribute).ToArray ();
-                linkedValues.Should().BeEquivalentTo(expected, $"Expected method `{src} to have it's {propertyDescription} modified, however, the sequence of {propertyDescription} does not match the expected value\n{FormattingUtils.FormatSequenceCompareFailureMessage2 (linkedValues, expected, srcValues)}");
+				linkedValues.Should ().BeEquivalentTo (expected, $"Expected method `{src} to have it's {propertyDescription} modified, however, the sequence of {propertyDescription} does not match the expected value\n{FormattingUtils.FormatSequenceCompareFailureMessage2 (linkedValues, expected, srcValues)}");
 			} else {
-                linkedValues.Should ().BeEquivalentTo(srcValues, $"Expected method `{src} to have it's {propertyDescription} unchanged, however, the {propertyDescription} differ from the original\n{FormattingUtils.FormatSequenceCompareFailureMessage (linkedValues, srcValues)}");
+				linkedValues.Should ().BeEquivalentTo (srcValues, $"Expected method `{src} to have it's {propertyDescription} unchanged, however, the {propertyDescription} differ from the original\n{FormattingUtils.FormatSequenceCompareFailureMessage (linkedValues, srcValues)}");
 			}
 		}
 
@@ -596,13 +580,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				.Select (name => name.Name)
 				.ToArray ();
 
-            actual.Should().BeEquivalentTo(expected);
+			actual.Should ().BeEquivalentTo (expected);
 		}
 
 		string? ReduceAssemblyFileNameOrNameToNameOnly (string? fileNameOrAssemblyName)
 		{
-            if (fileNameOrAssemblyName == null)
-                return null;
+			if (fileNameOrAssemblyName == null)
+				return null;
 
 			if (fileNameOrAssemblyName.EndsWith (".dll") || fileNameOrAssemblyName.EndsWith (".exe") || fileNameOrAssemblyName.EndsWith (".winmd"))
 				return System.IO.Path.GetFileNameWithoutExtension (fileNameOrAssemblyName);
@@ -615,24 +599,22 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			var expectedResourceNames = original.MainModule.AllDefinedTypes ()
 				.SelectMany (t => GetCustomAttributeCtorValues<string> (t, nameof (KeptResourceAttribute)))
-                .ToList();
+				.ToList ();
 
-            foreach (var resource in linked.MainModule.Resources)
-            {
-                if (!expectedResourceNames.Remove(resource.Name))
-                    Assert.True(false, $"Resource '{resource.Name}' should be removed.");
+			foreach (var resource in linked.MainModule.Resources) {
+				if (!expectedResourceNames.Remove (resource.Name))
+					Assert.True (false, $"Resource '{resource.Name}' should be removed.");
 
-                EmbeddedResource embeddedResource = (EmbeddedResource)resource;
+				EmbeddedResource embeddedResource = (EmbeddedResource) resource;
 
-                var expectedResource = (EmbeddedResource)original.MainModule.Resources.First(r => r.Name == resource.Name);
+				var expectedResource = (EmbeddedResource) original.MainModule.Resources.First (r => r.Name == resource.Name);
 
-                embeddedResource.GetResourceData().Should().BeEquivalentTo(expectedResource.GetResourceData(), $"Resource '{resource.Name}' data doesn't match.");
-            }
+				embeddedResource.GetResourceData ().Should ().BeEquivalentTo (expectedResource.GetResourceData (), $"Resource '{resource.Name}' data doesn't match.");
+			}
 
-            if (expectedResourceNames.Count > 0)
-            {
-                Assert.True(false, $"Resource '{expectedResourceNames.First()}' should be kept.");
-            }
+			if (expectedResourceNames.Count > 0) {
+				Assert.True (false, $"Resource '{expectedResourceNames.First ()}' should be kept.");
+			}
 		}
 
 		void VerifyExportedTypes (AssemblyDefinition original, AssemblyDefinition linked)
@@ -640,37 +622,37 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			var expectedTypes = original.MainModule.AllDefinedTypes ()
 				.SelectMany (t => GetCustomAttributeCtorValues<TypeReference> (t, nameof (KeptExportedTypeAttribute)).Select (l => l?.FullName ?? "<null>")).ToArray ();
 
-			linked.MainModule.ExportedTypes.Select (l => l.FullName).Should().BeEquivalentTo (expectedTypes);
+			linked.MainModule.ExportedTypes.Select (l => l.FullName).Should ().BeEquivalentTo (expectedTypes);
 		}
 
 		protected virtual void VerifyPseudoAttributes (MethodDefinition src, MethodDefinition linked)
 		{
 			var expected = (MethodAttributes) GetExpectedPseudoAttributeValue (src, (uint) src.Attributes);
-			linked.Attributes.Should().Be(expected, $"Method `{src}' pseudo attributes did not match expected");
+			linked.Attributes.Should ().Be (expected, $"Method `{src}' pseudo attributes did not match expected");
 		}
 
 		protected virtual void VerifyPseudoAttributes (TypeDefinition src, TypeDefinition linked)
 		{
 			var expected = (TypeAttributes) GetExpectedPseudoAttributeValue (src, (uint) src.Attributes);
-			linked.Attributes.Should().Be(expected, $"Type `{src}' pseudo attributes did not match expected");
+			linked.Attributes.Should ().Be (expected, $"Type `{src}' pseudo attributes did not match expected");
 		}
 
 		protected virtual void VerifyPseudoAttributes (FieldDefinition src, FieldDefinition linked)
 		{
 			var expected = (FieldAttributes) GetExpectedPseudoAttributeValue (src, (uint) src.Attributes);
-			linked.Attributes.Should().Be(expected, $"Field `{src}' pseudo attributes did not match expected");
+			linked.Attributes.Should ().Be (expected, $"Field `{src}' pseudo attributes did not match expected");
 		}
 
 		protected virtual void VerifyPseudoAttributes (PropertyDefinition src, PropertyDefinition linked)
 		{
 			var expected = (PropertyAttributes) GetExpectedPseudoAttributeValue (src, (uint) src.Attributes);
-			linked.Attributes.Should().Be(expected, $"Property `{src}' pseudo attributes did not match expected");
+			linked.Attributes.Should ().Be (expected, $"Property `{src}' pseudo attributes did not match expected");
 		}
 
 		protected virtual void VerifyPseudoAttributes (EventDefinition src, EventDefinition linked)
 		{
 			var expected = (EventAttributes) GetExpectedPseudoAttributeValue (src, (uint) src.Attributes);
-			linked.Attributes.Should().Be(expected, $"Event `{src}' pseudo attributes did not match expected");
+			linked.Attributes.Should ().Be (expected, $"Event `{src}' pseudo attributes did not match expected");
 		}
 
 		protected virtual void VerifyCustomAttributes (ICustomAttributeProvider src, ICustomAttributeProvider linked)
@@ -678,7 +660,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			var expectedAttrs = GetExpectedAttributes (src).ToList ();
 			var linkedAttrs = FilterLinkedAttributes (linked).ToList ();
 
-            linkedAttrs.Should().BeEquivalentTo (expectedAttrs, $"Custom attributes on `{src}' are not matching");
+			linkedAttrs.Should ().BeEquivalentTo (expectedAttrs, $"Custom attributes on `{src}' are not matching");
 		}
 
 		protected virtual void VerifySecurityAttributes (ICustomAttributeProvider src, ISecurityDeclarationProvider linked)
@@ -689,7 +671,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			var linkedAttrs = FilterLinkedSecurityAttributes (linked).ToList ();
 
-            linkedAttrs.Should ().BeEquivalentTo (expectedAttrs, $"Security attributes on `{src}' are not matching");
+			linkedAttrs.Should ().BeEquivalentTo (expectedAttrs, $"Security attributes on `{src}' are not matching");
 		}
 
 		protected virtual void VerifyArrayInitializers (MethodDefinition src, MethodDefinition linked)
@@ -708,19 +690,17 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 			var srcImplementationDetails = src.Module.Types.FirstOrDefault (t => string.IsNullOrEmpty (t.Namespace) && t.Name.StartsWith ("<PrivateImplementationDetails>"));
 
-            if (srcImplementationDetails == null)
-            {
-                Assert.True(false, "Could not locate <PrivateImplementationDetails> in the original assembly.  Does your test use initializers?");
-                return;
-            }
+			if (srcImplementationDetails == null) {
+				Assert.True (false, "Could not locate <PrivateImplementationDetails> in the original assembly.  Does your test use initializers?");
+				return;
+			}
 
 			var linkedImplementationDetails = linked.Module.Types.FirstOrDefault (t => string.IsNullOrEmpty (t.Namespace) && t.Name.StartsWith ("<PrivateImplementationDetails>"));
 
-            if (linkedImplementationDetails == null)
-            {
-                Assert.True(false, "Could not locate <PrivateImplementationDetails> in the linked assembly");
-                return;
-            }
+			if (linkedImplementationDetails == null) {
+				Assert.True (false, "Could not locate <PrivateImplementationDetails> in the linked assembly");
+				return;
+			}
 
 			var possibleInitializerFields = src.Body.Instructions
 				.Where (ins => IsLdtokenOnPrivateImplementationDetails (srcImplementationDetails, ins))
@@ -779,8 +759,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			if (original is TypeDefinition srcDefinition && srcDefinition.Name.Contains ("__FixedBuffer")) {
 				var name = srcDefinition.Name.Substring (1, srcDefinition.Name.IndexOf ('>') - 1);
 				var fixedField = srcDefinition.DeclaringType.Fields.FirstOrDefault (f => f.Name == name);
-                if (fixedField == null)
-                    Assert.True(false, $"Could not locate original fixed field for {srcDefinition}");
+				if (fixedField == null)
+					Assert.True (false, $"Could not locate original fixed field for {srcDefinition}");
 
 				foreach (var additionalExpectedAttributesFromFixedField in GetCustomAttributeCtorValues<object> (fixedField!, nameof (KeptAttributeOnFixedBufferTypeAttribute)))
 					yield return additionalExpectedAttributesFromFixedField?.ToString ();
@@ -835,26 +815,23 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				// Some versions of csc name it `<fieldname>e__FixedBuffer0`
 				// while mcs and other versions of csc name it `<fieldname>__FixedBuffer0`
 				var originalCompilerGeneratedBufferType = src.NestedTypes.FirstOrDefault (t => t.FullName.Contains ($"<{field.Name}>") && t.FullName.Contains ("__FixedBuffer"));
-                if (originalCompilerGeneratedBufferType == null)
-                {
-                    Assert.True(false, $"Could not locate original compiler generated fixed buffer type for field {field}");
-                    return;
-                }
+				if (originalCompilerGeneratedBufferType == null) {
+					Assert.True (false, $"Could not locate original compiler generated fixed buffer type for field {field}");
+					return;
+				}
 
 				var linkedCompilerGeneratedBufferType = linked.NestedTypes.FirstOrDefault (t => t.Name == originalCompilerGeneratedBufferType.Name);
-                if (linkedCompilerGeneratedBufferType == null)
-                {
-                    Assert.True(false, $"Missing expected type {originalCompilerGeneratedBufferType}");
-                    return;
-                }
+				if (linkedCompilerGeneratedBufferType == null) {
+					Assert.True (false, $"Missing expected type {originalCompilerGeneratedBufferType}");
+					return;
+				}
 
 				// Have to verify the field before the type
 				var originalElementField = originalCompilerGeneratedBufferType.Fields.FirstOrDefault ();
-                if (originalElementField == null)
-                {
-                    Assert.True(false, $"Could not locate original compiler generated FixedElementField on {originalCompilerGeneratedBufferType}");
-                    return;
-                }
+				if (originalElementField == null) {
+					Assert.True (false, $"Could not locate original compiler generated FixedElementField on {originalCompilerGeneratedBufferType}");
+					return;
+				}
 
 				var linkedField = linkedCompilerGeneratedBufferType?.Fields.FirstOrDefault ();
 				VerifyFieldKept (originalElementField, linkedField);
@@ -899,9 +876,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 					if (checkNames) {
 						if (srcp.CustomAttributes.Any (attr => attr.AttributeType.Name == nameof (RemovedNameValueAttribute))) {
 							string name = (src.GenericParameterType == GenericParameterType.Method ? "!!" : "!") + srcp.Position;
-                            lnkp.Name.Should().Be(name, "Expected empty generic parameter name");
+							lnkp.Name.Should ().Be (name, "Expected empty generic parameter name");
 						} else {
-                            lnkp.Name.Should().Be(srcp.Name, "Mismatch in generic parameter name");
+							lnkp.Name.Should ().Be (srcp.Name, "Mismatch in generic parameter name");
 						}
 					}
 				}
@@ -920,9 +897,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 					if (checkNames) {
 						if (srcp.CustomAttributes.Any (attr => attr.AttributeType.Name == nameof (RemovedNameValueAttribute)))
-						    lnkp.Name.Should().BeEmpty("Expected empty parameter name");
+							lnkp.Name.Should ().BeEmpty ("Expected empty parameter name");
 						else
-                            lnkp.Name.Should().Be(srcp.Name, "Mismatch in parameter name");
+							lnkp.Name.Should ().Be (srcp.Name, "Mismatch in parameter name");
 					}
 				}
 			}

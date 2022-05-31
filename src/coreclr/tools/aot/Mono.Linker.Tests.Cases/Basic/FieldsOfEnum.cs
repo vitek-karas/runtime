@@ -6,28 +6,28 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Basic
 {
-    [Kept]
-    class FieldsOfEnum
-    {
-        [Kept]
-        static void Main()
-        {
-            Console.WriteLine($"{MyEnum.A}");
-        }
-    }
+	[Kept]
+	class FieldsOfEnum
+	{
+		[Kept]
+		static void Main ()
+		{
+			Console.WriteLine ($"{MyEnum.A}");
+		}
+	}
 
-    [Kept]
-    [KeptMember("value__")]
-    [KeptBaseType(typeof(Enum))]
-    public enum MyEnum
-    {
-        [Kept]
-        A = 0,
+	[Kept]
+	[KeptMember ("value__")]
+	[KeptBaseType (typeof (Enum))]
+	public enum MyEnum
+	{
+		[Kept]
+		A = 0,
 
-        [Kept]
-        B = 1,
+		[Kept]
+		B = 1,
 
-        [Kept]
-        C = 2,
-    };
+		[Kept]
+		C = 2,
+	};
 }

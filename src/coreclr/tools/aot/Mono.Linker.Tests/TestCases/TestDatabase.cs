@@ -12,35 +12,35 @@ namespace Mono.Linker.Tests.TestCases
 
 		public static IEnumerable<object[]> BasicTests ()
 		{
-			return TestNamesBySuiteName("Basic");
+			return TestNamesBySuiteName ("Basic");
 		}
 
 		public static IEnumerable<object[]> MultiAssembly ()
 		{
-			return TestNamesBySuiteName("MultiAssembly");
+			return TestNamesBySuiteName ("MultiAssembly");
 		}
 
-        public static IEnumerable<object[]> LinkXml()
-        {
-            return TestNamesBySuiteName("LinkXml");
-        }
+		public static IEnumerable<object[]> LinkXml ()
+		{
+			return TestNamesBySuiteName ("LinkXml");
+		}
 
-        public static IEnumerable<object[]> FeatureSettings()
-        {
-            return TestNamesBySuiteName("FeatureSettings");
-        }
+		public static IEnumerable<object[]> FeatureSettings ()
+		{
+			return TestNamesBySuiteName ("FeatureSettings");
+		}
 
-        public static IEnumerable<object[]> DataFlow()
-        {
-            return TestNamesBySuiteName("DataFlow");
-        }
+		public static IEnumerable<object[]> DataFlow ()
+		{
+			return TestNamesBySuiteName ("DataFlow");
+		}
 
-        public static IEnumerable<object[]> RequiresCapability()
-        {
-            return TestNamesBySuiteName("RequiresCapability");
-        }
+		public static IEnumerable<object[]> RequiresCapability ()
+		{
+			return TestNamesBySuiteName ("RequiresCapability");
+		}
 
-        public static TestCaseCollector CreateCollector ()
+		public static TestCaseCollector CreateCollector ()
 		{
 			GetDirectoryPaths (out string rootSourceDirectory, out string testCaseAssemblyPath);
 			return new TestCaseCollector (rootSourceDirectory, testCaseAssemblyPath);
@@ -58,25 +58,25 @@ namespace Mono.Linker.Tests.TestCases
 			if (_cachedAllCases == null)
 				_cachedAllCases = CreateCollector ()
 					.Collect ()
-                    .Where (c => c != null)
+					.Where (c => c != null)
 					.OrderBy (c => c.DisplayName)
 					.ToArray ();
 
 			return _cachedAllCases;
 		}
 
-        public static TestCase? GetTestCaseFromName(string name)
-        {
-            return AllCases().FirstOrDefault (c => c.Name == name);
-        }
+		public static TestCase? GetTestCaseFromName (string name)
+		{
+			return AllCases ().FirstOrDefault (c => c.Name == name);
+		}
 
 		static IEnumerable<object[]> TestNamesBySuiteName (string suiteName)
 		{
-            return AllCases()
-                .Where(c => c.TestSuiteDirectory.FileName == suiteName)
-                .Select(c => c.DisplayName)
-                .OrderBy(c => c)
-                .Select(c => new object[] { c });
+			return AllCases ()
+				.Where (c => c.TestSuiteDirectory.FileName == suiteName)
+				.Select (c => c.DisplayName)
+				.OrderBy (c => c)
+				.Select (c => new object[] { c });
 		}
 
 		static void GetDirectoryPaths (out string rootSourceDirectory, out string testCaseAssemblyPath)

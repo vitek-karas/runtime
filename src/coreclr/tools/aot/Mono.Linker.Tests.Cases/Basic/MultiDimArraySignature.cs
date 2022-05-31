@@ -2,19 +2,19 @@
 
 namespace Mono.Linker.Tests.Cases.Basic
 {
-    [Kept]
-    class MultiDimArraySignature
-    {
-        [Kept]
-        static void Main()
-        {
-            SomeOtherType[,] multiDimArray = new SomeOtherType[4, 5];
-        }
+	[Kept]
+	class MultiDimArraySignature
+	{
+		[Kept]
+		static void Main ()
+		{
+			SomeOtherType[,] multiDimArray = new SomeOtherType[4, 5];
+		}
 
-        [Kept]
-        class SomeOtherType
-        {
-        }
+		[Kept]
+		class SomeOtherType
+		{
+		}
 
-    }
+	}
 }

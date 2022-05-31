@@ -11,15 +11,15 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Basic
 {
-    public class BasicWarning
-    {
-        [ExpectedWarning("IL2026", "RUC")]
-        public static void Main()
-        {
-            RUC();
-        }
+	public class BasicWarning
+	{
+		[ExpectedWarning ("IL2026", "RUC")]
+		public static void Main ()
+		{
+			RUC ();
+		}
 
-        [RequiresUnreferencedCode("RUC")]
-        static void RUC() { }
-    }
+		[RequiresUnreferencedCode ("RUC")]
+		static void RUC () { }
+	}
 }
