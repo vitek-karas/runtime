@@ -28,7 +28,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			typeSystemContext.ReferenceFilePaths = options.ReferenceFilePaths;
 			typeSystemContext.SetSystemModule (typeSystemContext.GetModuleForSimpleName (DefaultSystemModule));
 
-			CompilationModuleGroup compilationGroup = new SingleFileCompilationModuleGroup ();
+			List<EcmaModule> inputModules = new List<EcmaModule> ();
+			foreach (var inputFile in typeSystemContext.InputFilePaths) {
+				EcmaModule module = typeSystemContext.GetModuleFromPath (inputFile.Value);
+				inputModules.Add (module);
+			}
+
+			CompilationModuleGroup compilationGroup = new MultiFileSharedCompilationModuleGroup (typeSystemContext, inputModules);
 
 			List<ICompilationRootProvider> compilationRoots = new List<ICompilationRootProvider> ();
 			EcmaModule? entrypointModule = null;
