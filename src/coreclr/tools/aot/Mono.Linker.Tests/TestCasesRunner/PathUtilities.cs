@@ -15,7 +15,7 @@ namespace Mono.Linker.Tests.TestCasesRunner
 #endif
 
 #if NET7_0
-        public const string TFMDirectoryName = "net7.0";
+		public const string TFMDirectoryName = "net7.0";
 #elif NET6_0
 		public const string TFMDirectoryName = "net6.0";
 #elif NET5_0
@@ -29,13 +29,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 #endif
 
 #if NETCOREAPP
-        public static string GetArtifactsBinDirectory ()
-        {
-            return Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..");
-        }
+		public static string GetArtifactsBinDirectory ()
+		{
+			return Path.Combine (Directory.GetCurrentDirectory (), "..", "..", "..");
+		}
 #endif
 
-        public static string GetTestsSourceRootDirectory ([CallerFilePath] string? thisFile = null)
+		public static string GetTestsSourceRootDirectory ([CallerFilePath] string? thisFile = null)
 		{
 #if NETCOREAPP
 			// Deterministic builds sanitize source paths, so CallerFilePathAttribute gives an incorrect path.

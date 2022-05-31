@@ -12,7 +12,7 @@ using Xunit.Sdk;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
-    public class TestRunner
+	public class TestRunner
 	{
 		private readonly ObjectFactory _factory;
 
@@ -23,32 +23,27 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		public virtual ILCompilerTestCaseResult? Run (TestCase testCase)
 		{
-            try
-            {
-                using (var fullTestCaseAssemblyDefinition = AssemblyDefinition.ReadAssembly(testCase.OriginalTestCaseAssemblyPath.ToString()))
-                {
-                    var compilationMetadataProvider = _factory.CreateCompilationMetadataProvider(testCase, fullTestCaseAssemblyDefinition);
+			try {
+				using (var fullTestCaseAssemblyDefinition = AssemblyDefinition.ReadAssembly (testCase.OriginalTestCaseAssemblyPath.ToString ())) {
+					var compilationMetadataProvider = _factory.CreateCompilationMetadataProvider (testCase, fullTestCaseAssemblyDefinition);
 
-                    if (compilationMetadataProvider.IsIgnored(out string? ignoreReason))
-                        throw new IgnoreTestException(ignoreReason);
+					if (compilationMetadataProvider.IsIgnored (out string? ignoreReason))
+						throw new IgnoreTestException (ignoreReason);
 
-                    var sandbox = Sandbox(testCase, compilationMetadataProvider);
-                    var compilationResult = Compile(sandbox, compilationMetadataProvider);
-                    using (var expectationsAssemblyDefinition = AssemblyDefinition.ReadAssembly(compilationResult.ExpectationsAssemblyPath.ToString()))
-                    {
-                        var metadataProvider = _factory.CreateMetadataProvider(testCase, expectationsAssemblyDefinition);
+					var sandbox = Sandbox (testCase, compilationMetadataProvider);
+					var compilationResult = Compile (sandbox, compilationMetadataProvider);
+					using (var expectationsAssemblyDefinition = AssemblyDefinition.ReadAssembly (compilationResult.ExpectationsAssemblyPath.ToString ())) {
+						var metadataProvider = _factory.CreateMetadataProvider (testCase, expectationsAssemblyDefinition);
 
-                        sandbox.PopulateFromExpectations(metadataProvider);
+						sandbox.PopulateFromExpectations (metadataProvider);
 
-                        PrepForLink(sandbox, compilationResult);
-                        return Link(testCase, sandbox, compilationResult, metadataProvider);
-                    }
-                }
-            }
-            catch (IgnoreTestException)
-            {
-                return null;
-            }
+						PrepForLink (sandbox, compilationResult);
+						return Link (testCase, sandbox, compilationResult, metadataProvider);
+					}
+				}
+			} catch (IgnoreTestException) {
+				return null;
+			}
 		}
 
 		public virtual ILCompilerTestCaseResult Relink (ILCompilerTestCaseResult result)
@@ -111,13 +106,13 @@ namespace Mono.Linker.Tests.TestCasesRunner
 
 		private ILCompilerTestCaseResult Link (TestCase testCase, TestCaseSandbox sandbox, ManagedCompilationResult compilationResult, TestCaseMetadataProvider metadataProvider)
 		{
-			var trimmer = _factory.CreateTrimmer();
+			var trimmer = _factory.CreateTrimmer ();
 
 			var builder = _factory.CreateTrimmerOptionsBuilder (metadataProvider);
 
 			AddLinkOptions (sandbox, compilationResult, builder, metadataProvider);
 
-            var logWriter = new TestLogWriter();
+			var logWriter = new TestLogWriter ();
 			trimmer.Trim (builder.Options, logWriter);
 
 			return new ILCompilerTestCaseResult (testCase, compilationResult.InputAssemblyPath, compilationResult.ExpectationsAssemblyPath, sandbox, metadataProvider, compilationResult, logWriter);
@@ -127,22 +122,18 @@ namespace Mono.Linker.Tests.TestCasesRunner
 		{
 			var caseDefinedOptions = metadataProvider.GetLinkerOptions (sandbox.InputDirectory);
 
-			builder.AddOutputDirectory (sandbox.OutputDirectory.Combine(compilationResult.InputAssemblyPath.FileNameWithoutExtension + ".obj"));
+			builder.AddOutputDirectory (sandbox.OutputDirectory.Combine (compilationResult.InputAssemblyPath.FileNameWithoutExtension + ".obj"));
 
 			foreach (var rspFile in sandbox.ResponseFiles)
 				builder.AddResponseFile (rspFile);
 
 			foreach (var inputReference in sandbox.InputDirectory.Files ()) {
 				var ext = inputReference.ExtensionWithDot;
-				if (ext == ".dll" || ext == ".exe")
-				{
-					if (caseDefinedOptions.AssembliesAction.Contains(("link", inputReference.FileNameWithoutExtension)))
-					{
-						builder.AddLinkAssembly(inputReference);
-					}
-					else
-					{
-                        builder.AddReference(inputReference);
+				if (ext == ".dll" || ext == ".exe") {
+					if (caseDefinedOptions.AssembliesAction.Contains (("link", inputReference.FileNameWithoutExtension))) {
+						builder.AddLinkAssembly (inputReference);
+					} else {
+						builder.AddReference (inputReference);
 					}
 				}
 			}

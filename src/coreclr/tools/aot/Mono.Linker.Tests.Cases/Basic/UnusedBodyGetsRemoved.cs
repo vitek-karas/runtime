@@ -8,22 +8,22 @@ namespace Mono.Linker.Tests.Cases.Basic
 		{
 			UnusedBodyType unusedBody = null;
 			if (unusedBody != null) {
-				unusedBody.UnusedBody();
-				unusedBody.UnusedBody2();
+				unusedBody.UnusedBody ();
+				unusedBody.UnusedBody2 ();
 			}
 		}
 
 		class UnusedBodyType
 		{
 			[Kept]
-			[ExpectedInstructionSequence(new[] {
+			[ExpectedInstructionSequence (new[] {
 				"ldnull",
 				"throw"
 			})]
 			public void UnusedBody () => DoSomethingExpensive ();
 
 			[Kept]
-			[ExpectedInstructionSequence(new[] {
+			[ExpectedInstructionSequence (new[] {
 				"ldnull",
 				"throw"
 			})]

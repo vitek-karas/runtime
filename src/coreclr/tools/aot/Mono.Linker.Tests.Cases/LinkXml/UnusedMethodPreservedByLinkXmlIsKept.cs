@@ -5,7 +5,7 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 namespace Mono.Linker.Tests.Cases.LinkXml
 {
 	[SetupCompileResource ("UnusedMethodPreservedByLinkXmlIsKept.xml", "ILLink.Descriptors.xml")]
-    [RemovedResourceInAssembly("test.exe", "ILLink.Descriptors.xml")]
+	[RemovedResourceInAssembly ("test.exe", "ILLink.Descriptors.xml")]
 	class UnusedMethodPreservedByLinkXmlIsKept
 	{
 		public static void Main ()

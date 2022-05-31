@@ -7,9 +7,9 @@ namespace Mono.Linker.Tests.Cases.FeatureSettings
 #pragma warning disable 169
 #pragma warning disable 67
 
-    //[SetupLinkerDescriptorFile ("FeatureDescriptorsGlobalTrue.xml")]
-    //[SetupLinkerDescriptorFile ("FeatureDescriptorsGlobalFalse.xml")]
-    [SetupCompileResource ("FeatureDescriptors.xml", "ILLink.Descriptors.xml")]
+	//[SetupLinkerDescriptorFile ("FeatureDescriptorsGlobalTrue.xml")]
+	//[SetupLinkerDescriptorFile ("FeatureDescriptorsGlobalFalse.xml")]
+	[SetupCompileResource ("FeatureDescriptors.xml", "ILLink.Descriptors.xml")]
 	//[SetupLinkerArgument ("--feature", "GlobalCondition", "true")]
 	[SetupLinkerArgument ("--feature", "AssemblyCondition", "false")]
 	[SetupLinkerArgument ("--feature", "TypeCondition", "true")]

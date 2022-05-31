@@ -7,24 +7,24 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Basic
 {
-    [Kept]
-    class InstanceFields
-    {
-        [Kept]
-        static void Main()
-        {
-            _ = new TypeWithSequentialLayout();
-        }
-    }
+	[Kept]
+	class InstanceFields
+	{
+		[Kept]
+		static void Main ()
+		{
+			_ = new TypeWithSequentialLayout ();
+		}
+	}
 
-    [Kept]
-    [KeptMember(".ctor()")]
-    [StructLayout(LayoutKind.Sequential)]
-    class TypeWithSequentialLayout
-    {
-        [Kept]
-        int Field = 42;
+	[Kept]
+	[KeptMember (".ctor()")]
+	[StructLayout (LayoutKind.Sequential)]
+	class TypeWithSequentialLayout
+	{
+		[Kept]
+		int Field = 42;
 
-        static int StaticField; // Must not assign value, otherwise .cctor would keep the field
-    }
+		static int StaticField; // Must not assign value, otherwise .cctor would keep the field
+	}
 }

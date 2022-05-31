@@ -5,16 +5,16 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 
 namespace Mono.Linker.Tests.Cases.Basic
 {
-    public class TypeOf
-    {
-        public static void Main()
-        {
-            var t = typeof(TestType);
-        }
+	public class TypeOf
+	{
+		public static void Main ()
+		{
+			var t = typeof (TestType);
+		}
 
-        [Kept]
-        class TestType
-        {
-        }
-    }
+		[Kept]
+		class TestType
+		{
+		}
+	}
 }

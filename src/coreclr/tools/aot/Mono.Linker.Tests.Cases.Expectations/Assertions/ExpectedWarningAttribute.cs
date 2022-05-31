@@ -19,11 +19,11 @@ namespace Mono.Linker.Tests.Cases.Expectations.Assertions
 		public int SourceLine { get; set; }
 		public int SourceColumn { get; set; }
 
-        /// <summary>
-        /// Property used by the result checkers of trimmer and analyzers to determine whether
-        /// the tool should have produced the specified warning on the annotated member.
-        /// </summary>
-        public ProducedBy ProducedBy { get; set; } = ProducedBy.TrimmerAnalyzerAndNativeAot;
+		/// <summary>
+		/// Property used by the result checkers of trimmer and analyzers to determine whether
+		/// the tool should have produced the specified warning on the annotated member.
+		/// </summary>
+		public ProducedBy ProducedBy { get; set; } = ProducedBy.TrimmerAnalyzerAndNativeAot;
 
 		public bool CompilerGeneratedCode { get; set; }
 	}

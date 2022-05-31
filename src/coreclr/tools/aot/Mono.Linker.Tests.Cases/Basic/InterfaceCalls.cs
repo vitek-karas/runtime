@@ -2,34 +2,34 @@
 
 namespace Mono.Linker.Tests.Cases.Basic
 {
-    [Kept]
-    class InterfaceCalls
-    {
-        [Kept]
-        static void Main()
-        {
-            ISimpleInterface simpleInterface = new SimpleType();
-            simpleInterface.InterfaceMethod();
-        }
+	[Kept]
+	class InterfaceCalls
+	{
+		[Kept]
+		static void Main ()
+		{
+			ISimpleInterface simpleInterface = new SimpleType ();
+			simpleInterface.InterfaceMethod ();
+		}
 
-        [Kept]
-        interface ISimpleInterface
-        {
-            [Kept]
-            void InterfaceMethod();
-            void UnusedMethod();
-        }
+		[Kept]
+		interface ISimpleInterface
+		{
+			[Kept]
+			void InterfaceMethod ();
+			void UnusedMethod ();
+		}
 
-        interface ISimpleUnusedInterface { }
+		interface ISimpleUnusedInterface { }
 
-        [Kept]
-        [KeptMember(".ctor()")]
-        [KeptInterface(typeof(ISimpleInterface))]
-        class SimpleType : ISimpleInterface, ISimpleUnusedInterface
-        {
-            [Kept]
-            public virtual void InterfaceMethod() { }
-            public virtual void UnusedMethod() { }
-        }
-    }
+		[Kept]
+		[KeptMember (".ctor()")]
+		[KeptInterface (typeof (ISimpleInterface))]
+		class SimpleType : ISimpleInterface, ISimpleUnusedInterface
+		{
+			[Kept]
+			public virtual void InterfaceMethod () { }
+			public virtual void UnusedMethod () { }
+		}
+	}
 }

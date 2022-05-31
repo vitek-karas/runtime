@@ -6,12 +6,12 @@ using Mono.Linker.Tests.Cases.Expectations.Metadata;
 
 namespace Mono.Linker.Tests.Cases.Basic
 {
-    [SetupCompileResource("Dependencies/Resources_EmbeddedResource.txt", "EmbeddedResource.txt")]
-    [KeptResource("EmbeddedResource.txt")]
-    public class Resources
-    {
-        public static void Main()
-        {
-        }
-    }
+	[SetupCompileResource ("Dependencies/Resources_EmbeddedResource.txt", "EmbeddedResource.txt")]
+	[KeptResource ("EmbeddedResource.txt")]
+	public class Resources
+	{
+		public static void Main ()
+		{
+		}
+	}
 }
