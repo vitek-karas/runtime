@@ -25,6 +25,7 @@ namespace ILCompiler.Dataflow
         private readonly FlowAnnotations _annotations;
         private bool _typeHierarchyDataFlow;
         private const string RequiresUnreferencedCodeAttribute = nameof(RequiresUnreferencedCodeAttribute);
+        private const string RequiresDynamicCodeAttribute = nameof(RequiresDynamicCodeAttribute);
 
         public DependencyList Dependencies { get => _dependencies; }
 
@@ -88,6 +89,8 @@ namespace ILCompiler.Dataflow
 
 		internal void MarkMethod (in MessageOrigin origin, MethodDesc method, Origin memberWithRequirements)
 		{
+            var diagnosticContextForRUC = new DiagnosticContext(origin, !ReflectionMethodBodyScanner.ShouldSuppressAnalysisWarningsForRequires(origin.MemberDefinition, RequiresUnreferencedCodeAttribute), _logger);
+            var diagnosticContextForRDC = new DiagnosticContext(origin, !ReflectionMethodBodyScanner.ShouldSuppressAnalysisWarningsForRequires(origin.MemberDefinition, RequiresDynamicCodeAttribute), _logger);
             if (method.DoesMethodRequire(RequiresUnreferencedCodeAttribute, out _))
             {
                 if (_typeHierarchyDataFlow)
@@ -96,6 +99,9 @@ namespace ILCompiler.Dataflow
                         ((TypeOrigin)memberWithRequirements).GetDisplayName(), method.GetDisplayName());
                 }
             }
+
+            ReflectionMethodBodyScanner.CheckAndReportRequires(method, diagnosticContextForRUC, RequiresUnreferencedCodeAttribute);
+            ReflectionMethodBodyScanner.CheckAndReportRequires(method, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
 
             if (_annotations.ShouldWarnWhenAccessedForReflection(method) && !ReflectionMethodBodyScanner.ShouldSuppressAnalysisWarningsForRequires(method, RequiresUnreferencedCodeAttribute))
             {

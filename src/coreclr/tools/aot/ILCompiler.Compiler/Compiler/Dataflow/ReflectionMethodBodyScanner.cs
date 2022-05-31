@@ -60,11 +60,11 @@ namespace ILCompiler.Dataflow
                 fieldDefinition.DoesFieldRequire(RequiresDynamicCodeAttribute, out _);
         }
 
-        void CheckAndReportRequires(TypeSystemEntity calledMember, in MessageOrigin origin, string requiresAttributeName)
+        internal static void CheckAndReportRequires(TypeSystemEntity calledMember, in DiagnosticContext diagnosticContext, string requiresAttributeName)
         {
             // If the caller of a method is already marked with `Requires` a new warning should not
             // be produced for the callee.
-            if (ShouldSuppressAnalysisWarningsForRequires(origin.MemberDefinition, requiresAttributeName))
+            if (ShouldSuppressAnalysisWarningsForRequires(diagnosticContext.Origin.MemberDefinition, requiresAttributeName))
                 return;
 
             if (!calledMember.DoesMemberRequire(requiresAttributeName, out var requiresAttribute))
@@ -78,7 +78,7 @@ namespace ILCompiler.Dataflow
                 _ => throw new NotImplementedException($"{requiresAttributeName} is not a valid supported Requires attribute"),
             };
 
-            ReportRequires(calledMember.GetDisplayName(), origin, diagnosticId, requiresAttribute.Value);
+            ReportRequires(calledMember.GetDisplayName(), diagnosticContext, diagnosticId, requiresAttribute.Value);
         }
 
         internal static bool ShouldSuppressAnalysisWarningsForRequires(TypeSystemEntity originMember, string requiresAttribute)
@@ -104,12 +104,11 @@ namespace ILCompiler.Dataflow
             return false;
         }
 
-        void ReportRequires(string displayName, in MessageOrigin currentOrigin, DiagnosticId diagnosticId, CustomAttributeValue<TypeDesc> requiresAttribute)
+        private static void ReportRequires(string displayName, in DiagnosticContext diagnosticContext, DiagnosticId diagnosticId, CustomAttributeValue<TypeDesc> requiresAttribute)
         {
             string arg1 = MessageFormat.FormatRequiresAttributeMessageArg(DiagnosticUtilities.GetRequiresAttributeMessage((CustomAttributeValue<TypeDesc>)requiresAttribute));
             string arg2 = MessageFormat.FormatRequiresAttributeUrlArg(DiagnosticUtilities.GetRequiresAttributeUrl((CustomAttributeValue<TypeDesc>)requiresAttribute));
-
-            _logger.LogWarning(currentOrigin, diagnosticId, displayName, arg1, arg2);
+            diagnosticContext.AddDiagnostic(diagnosticId, displayName, arg1, arg2);
         }
 
         private enum ScanningPurpose
@@ -379,14 +378,15 @@ namespace ILCompiler.Dataflow
 
         protected override void HandleStoreField(MethodIL methodBody, int offset, FieldValue field, MultiValue valueToStore)
         {
+            var diagnosticContextForRUC = new DiagnosticContext(new MessageOrigin(methodBody, offset), !ShouldSuppressAnalysisWarningsForRequires(methodBody.OwningMethod, RequiresUnreferencedCodeAttribute), _logger);
+            var diagnosticContextForRDC = new DiagnosticContext(new MessageOrigin(methodBody, offset), !ShouldSuppressAnalysisWarningsForRequires(methodBody.OwningMethod, RequiresUnreferencedCodeAttribute), _logger);
             if (field.DynamicallyAccessedMemberTypes != 0)
             {
-                var diagnosticContext = new DiagnosticContext(new MessageOrigin(methodBody, offset), !ShouldSuppressAnalysisWarningsForRequires(methodBody.OwningMethod, RequiresUnreferencedCodeAttribute), _logger);
-                RequireDynamicallyAccessedMembers(diagnosticContext, valueToStore, field, new FieldOrigin(field.Field));
+                RequireDynamicallyAccessedMembers(diagnosticContextForRUC, valueToStore, field, new FieldOrigin(field.Field));
             }
 
-            CheckAndReportRequires(field.Field, new MessageOrigin(methodBody.OwningMethod), RequiresUnreferencedCodeAttribute);
-            CheckAndReportRequires(field.Field, new MessageOrigin(methodBody.OwningMethod), RequiresDynamicCodeAttribute);
+            CheckAndReportRequires(field.Field, diagnosticContextForRUC, RequiresUnreferencedCodeAttribute);
+            CheckAndReportRequires(field.Field, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
         }
 
         protected override void HandleStoreParameter(MethodIL method, int offset, MethodParameterValue parameter, MultiValue valueToStore)
@@ -406,6 +406,7 @@ namespace ILCompiler.Dataflow
             var callingMethodDefinition = callingMethodBody.OwningMethod;
             bool shouldEnableReflectionWarnings = !ShouldSuppressAnalysisWarningsForRequires(callingMethodDefinition, RequiresUnreferencedCodeAttribute);
             bool shouldEnableAotWarnings = !ShouldSuppressAnalysisWarningsForRequires(callingMethodDefinition, RequiresDynamicCodeAttribute);
+            bool shouldEnableSingleFileWarnings = !ShouldSuppressAnalysisWarningsForRequires(callingMethodDefinition, RequiresDynamicCodeAttribute);
             var reflectionContext = new ReflectionPatternContext(_logger, shouldEnableReflectionWarnings, callingMethodBody, offset, new MethodOrigin(calledMethod));
 
             DynamicallyAccessedMemberTypes returnValueDynamicallyAccessedMemberTypes = 0;
@@ -414,8 +415,10 @@ namespace ILCompiler.Dataflow
             returnValueDynamicallyAccessedMemberTypes = requiresDataFlowAnalysis ?
                 _annotations.GetReturnParameterAnnotation(calledMethod) : 0;
 
-            var diagnosticContext = new DiagnosticContext(new MessageOrigin(callingMethodBody, offset), shouldEnableReflectionWarnings, _logger);
-            var handleCallAction = new HandleCallAction(_annotations, _reflectionMarker, diagnosticContext, callingMethodDefinition, new MethodOrigin(calledMethod));
+            var diagnosticContextForRUC = new DiagnosticContext(new MessageOrigin(callingMethodBody, offset), shouldEnableReflectionWarnings, _logger);
+            var diagnosticContextForRDC = new DiagnosticContext(new MessageOrigin(callingMethodBody, offset), shouldEnableAotWarnings, _logger);
+            var diagnosticContextForRAF = new DiagnosticContext(new MessageOrigin(callingMethodBody, offset), shouldEnableSingleFileWarnings, _logger);
+            var handleCallAction = new HandleCallAction(_annotations, _reflectionMarker, diagnosticContextForRUC, callingMethodDefinition, new MethodOrigin(calledMethod));
 
             var intrinsicId = Intrinsics.GetIntrinsicIdForMethod(calledMethod);
             switch (intrinsicId)
@@ -479,7 +482,7 @@ namespace ILCompiler.Dataflow
                         {
                             case IntrinsicId.Type_MakeGenericType:
                             case IntrinsicId.MethodInfo_MakeGenericMethod:
-                                CheckAndReportRequires(calledMethod, new MessageOrigin(callingMethodBody, offset), RequiresDynamicCodeAttribute);
+                                CheckAndReportRequires(calledMethod, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
                                 break;
                         }
 
@@ -510,14 +513,14 @@ namespace ILCompiler.Dataflow
 
                             if (comDangerousMethod)
                             {
-                                diagnosticContext.AddDiagnostic(DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed, calledMethod.GetDisplayName());
+                                diagnosticContextForRUC.AddDiagnostic(DiagnosticId.CorrectnessOfCOMCannotBeGuaranteed, calledMethod.GetDisplayName());
                             }
                         }
 
                         var origin = new MessageOrigin(callingMethodBody, offset);
-                        CheckAndReportRequires(calledMethod, origin, RequiresUnreferencedCodeAttribute);
-                        CheckAndReportRequires(calledMethod, origin, RequiresDynamicCodeAttribute);
-                        CheckAndReportRequires(calledMethod, origin, RequiresAssemblyFilesAttribute);
+                        CheckAndReportRequires(calledMethod, diagnosticContextForRUC, RequiresUnreferencedCodeAttribute);
+                        CheckAndReportRequires(calledMethod, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
+                        CheckAndReportRequires(calledMethod, diagnosticContextForRAF, RequiresAssemblyFilesAttribute);
 
                         var instanceValue = MultiValueLattice.Top;
                         IReadOnlyList<MultiValue> parameterValues = methodParams;
@@ -567,7 +570,7 @@ namespace ILCompiler.Dataflow
                                 }
                             }
                             else
-                                CheckAndReportRequires(calledMethod, new MessageOrigin(callingMethodBody, offset), RequiresDynamicCodeAttribute);
+                                CheckAndReportRequires(calledMethod, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
                         }
                     }
                     break;
@@ -602,7 +605,7 @@ namespace ILCompiler.Dataflow
                                 }
                             }
                             else
-                                CheckAndReportRequires(calledMethod, new MessageOrigin(callingMethodBody, offset), RequiresDynamicCodeAttribute);
+                                CheckAndReportRequires(calledMethod, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
                         }
                     }
                     break;
@@ -627,7 +630,7 @@ namespace ILCompiler.Dataflow
                                 }
                             }
                             else
-                                CheckAndReportRequires(calledMethod, new MessageOrigin(callingMethodBody, offset), RequiresDynamicCodeAttribute);
+                                CheckAndReportRequires(calledMethod, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
                         }
                     }
                     break;
