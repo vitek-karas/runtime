@@ -98,7 +98,6 @@ namespace ILCompiler.Dataflow
                         ((TypeOrigin)memberWithRequirements).GetDisplayName(), method.GetDisplayName());
                 }
             }
-
             ReflectionMethodBodyScanner.CheckAndReportRequires(method, diagnosticContextForRUC, RequiresUnreferencedCodeAttribute);
             ReflectionMethodBodyScanner.CheckAndReportRequires(method, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
 
@@ -112,10 +111,14 @@ namespace ILCompiler.Dataflow
 
 		void MarkField (in MessageOrigin origin, FieldDesc field, Origin memberWithRequirements)
 		{
+            var diagnosticContextForRUC = new DiagnosticContext(origin, !ReflectionMethodBodyScanner.ShouldSuppressAnalysisWarningsForRequires(origin.MemberDefinition, RequiresUnreferencedCodeAttribute), _logger);
+            var diagnosticContextForRDC = new DiagnosticContext(origin, !ReflectionMethodBodyScanner.ShouldSuppressAnalysisWarningsForRequires(origin.MemberDefinition, RequiresDynamicCodeAttribute), _logger);
             if (_annotations.ShouldWarnWhenAccessedForReflection(field) && !ReflectionMethodBodyScanner.ShouldSuppressAnalysisWarningsForRequires(origin.MemberDefinition, RequiresUnreferencedCodeAttribute))
             {
                 WarnOnReflectionAccess(origin, field, memberWithRequirements);
             }
+            ReflectionMethodBodyScanner.CheckAndReportRequires(field, diagnosticContextForRUC, RequiresUnreferencedCodeAttribute);
+            ReflectionMethodBodyScanner.CheckAndReportRequires(field, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
 
             RootingHelpers.TryGetDependenciesForReflectedField(ref _dependencies, _factory, field, memberWithRequirements.ToString());
 		}

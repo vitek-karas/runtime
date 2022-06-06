@@ -28,6 +28,8 @@ namespace ILCompiler.DependencyAnalysis
         
         public override IEnumerable<DependencyListEntry> GetStaticDependencies(NodeFactory factory)
         {
+            if (_methodIL.ToString().Contains("TestStaticCtorMarkingIsTriggeredByFieldAccessRead"))
+                Debug.WriteLine("Stop");
             var mdManager = (UsageBasedMetadataManager)factory.MetadataManager;
             try
             {

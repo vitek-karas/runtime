@@ -57,7 +57,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			{
 			}
 
-			[ExpectedWarning ("IL2026", "--GenericType.RequiresOnlyThroughReflection--", ProducedBy = ProducedBy.Analyzer | ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "--GenericType.RequiresOnlyThroughReflection--")]
+			[ExpectedWarning ("IL3050", "--GenericType.RequiresOnlyThroughReflection--", ProducedBy = ProducedBy.NativeAot)]
 			public static void Test ()
 			{
 				typeof (AccessedThroughReflectionOnGenericType<T>)
@@ -99,7 +100,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			static extern PInvokeReturnType PInvokeReturnsType ();
 
 			// Analyzer doesn't support IL2050 yet
-			[ExpectedWarning ("IL2050", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2050", ProducedBy = ProducedBy.Trimmer | ProducedBy.NativeAot)]
 			public static void Test ()
 			{
 				PInvokeReturnsType ();
@@ -158,8 +159,8 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			}
 
 			[ExpectedWarning ("IL2026", "--AnnotatedMethod--")]
-			[ExpectedWarning ("IL3002", "--AnnotatedMethod--", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL3050", "--AnnotatedMethod--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3002", "--AnnotatedMethod--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+			[ExpectedWarning ("IL3050", "--AnnotatedMethod--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 			public static void TestNewConstraintOnTypeParameterInAnnotatedMethod ()
 			{
 				AnnotatedMethod ();
@@ -219,7 +220,7 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 			[ExpectedWarning ("IL2026", "--PropertyWithLdToken.get--")]
 			[ExpectedWarning ("IL2026", "--PropertyWithLdToken.get--", ProducedBy = ProducedBy.Trimmer)]
 			[ExpectedWarning ("IL3002", "--PropertyWithLdToken.get--", ProducedBy = ProducedBy.Analyzer)]
-			[ExpectedWarning ("IL3050", "--PropertyWithLdToken.get--", ProducedBy = ProducedBy.Analyzer)]
+			[ExpectedWarning ("IL3050", "--PropertyWithLdToken.get--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 			public static void Test ()
 			{
 				Expression<Func<bool>> getter = () => PropertyWithLdToken;

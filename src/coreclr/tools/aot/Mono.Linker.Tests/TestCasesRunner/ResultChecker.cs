@@ -20,6 +20,7 @@ using Mono.Linker.Tests.Cases.Expectations.Assertions;
 using Mono.Linker.Tests.Cases.Expectations.Metadata;
 using Mono.Linker.Tests.Extensions;
 using Xunit;
+using Mono.Linker.Tests.Cases.RequiresCapability;
 
 namespace Mono.Linker.Tests.TestCasesRunner
 {
@@ -105,6 +106,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 			List<MessageContainer> loggedMessages = logger.GetLoggedMessages ();
 			List<(IMemberDefinition, CustomAttribute)> expectedNoWarningsAttributes = new List<(IMemberDefinition, CustomAttribute)> ();
 			foreach (var attrProvider in GetAttributeProviders (original)) {
+				if (attrProvider.ToString() is String mystring && mystring.Contains ("RequiresInCompilerGeneratedCode/SuppressInLambda"))
+					Debug.WriteLine ("Print");
 				foreach (var attr in attrProvider.CustomAttributes) {
 					if (!IsProducedByNativeAOT (attr))
 						continue;
@@ -160,6 +163,9 @@ namespace Mono.Linker.Tests.TestCasesRunner
 							bool expectedWarningFound = false;
 
 							foreach (var loggedMessage in loggedMessages) {
+								if (loggedMessage.ToString ().Contains ("RequiresInCompilerGeneratedCode.SuppressInLambda")) {
+									Debug.WriteLine ("Print 2");
+								}
 
 								if (loggedMessage.Category != MessageCategory.Warning || loggedMessage.Code != expectedWarningCodeNumber)
 									continue;
@@ -211,9 +217,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 										if (attrProvider is not IMemberDefinition expectedMember)
 											continue;
 
-										string actualName = methodDesc.OwningType.ToString () + "." + methodDesc.Name;
-
-										if (actualName.StartsWith (expectedMember.DeclaringType.FullName) &&
+										string actualName = methodDesc.OwningType.ToString ().Replace("+", ".") + "." + methodDesc.Name;
+										if (actualName.Contains (expectedMember.DeclaringType.FullName.Replace ("/", ".")) &&
 											actualName.Contains ("<" + expectedMember.Name + ">")) {
 											expectedWarningFound = true;
 											loggedMessages.Remove (loggedMessage);
