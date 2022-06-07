@@ -74,7 +74,8 @@ namespace Mono.Linker.Tests.TestCasesRunner
 				options.TrimAssemblies.ToArray ());
 
 			CompilationBuilder builder = new RyuJitCompilationBuilder (typeSystemContext, compilationGroup)
-				.UseILProvider (ilProvider);
+				.UseILProvider (ilProvider)
+				.UseCompilationUnitPrefix("");
 
 			IILScanner scanner = builder.GetILScannerBuilder ()
 				.UseCompilationRoots (compilationRoots)

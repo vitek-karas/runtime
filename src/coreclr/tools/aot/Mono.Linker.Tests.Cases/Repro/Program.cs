@@ -24,28 +24,21 @@ namespace Mono.Linker.Tests.Cases.Repro
 
 		public static void Main ()
 		{
-			TestDynamicallyAccessedMethodViaGenericMethodParameterInIterator ();
+			TestStaticCtorMarkingIsTriggeredByFieldAccessRead ();
 		}
 
-		[ExpectedWarning ("IL2026", "--TypeWithMethodWithRequires.MethodWithRequires--", CompilerGeneratedCode = true, ProducedBy = ProducedBy.Analyzer | ProducedBy.Trimmer)]
-		static IEnumerable<int> TestDynamicallyAccessedMethodViaGenericMethodParameterInIterator ()
+		[ExpectedWarning ("IL2026", "StaticCCtorTriggeredByFieldAccessRead.field", "Message for --StaticCCtorTriggeredByFieldAccessRead--")]
+		[ExpectedWarning ("IL3050", "StaticCCtorTriggeredByFieldAccessRead.field", "Message for --StaticCCtorTriggeredByFieldAccessRead--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+		static void TestStaticCtorMarkingIsTriggeredByFieldAccessRead ()
 		{
-			yield return 1;
-			MethodWithGenericWhichRequiresMethods<TypeWithMethodWithRequires> ();
+			var _ = StaticCCtorTriggeredByFieldAccessRead.field;
 		}
 
-		class TypeWithMethodWithRequires
+		[RequiresUnreferencedCode ("Message for --StaticCCtorTriggeredByFieldAccessRead--")]
+		[RequiresDynamicCode ("Message for --StaticCCtorTriggeredByFieldAccessRead--")]
+		class StaticCCtorTriggeredByFieldAccessRead
 		{
-			[RequiresUnreferencedCode ("--TypeWithMethodWithRequires.MethodWithRequires--")]
-			[RequiresAssemblyFiles ("--TypeWithMethodWithRequires.MethodWithRequires--")]
-			[RequiresDynamicCode ("--TypeWithMethodWithRequires.MethodWithRequires--")]
-			static void MethodWithRequires ()
-			{
-			}
-		}
-
-		static void MethodWithGenericWhichRequiresMethods<[DynamicallyAccessedMembers (DynamicallyAccessedMemberTypes.NonPublicMethods)] T> ()
-		{
+			public static int field = 42;
 		}
 	}
 }

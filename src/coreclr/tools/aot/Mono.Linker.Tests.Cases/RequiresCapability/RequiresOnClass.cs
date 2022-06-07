@@ -456,11 +456,11 @@ namespace Mono.Linker.Tests.Cases.RequiresCapability
 		}
 
 		[ExpectedWarning ("IL2026", "MemberTypesWithRequires.field")]
-		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.field", ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.field", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 		[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Property.set")]
-		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.Property.set", ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.Property.set", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 		[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove")]
-		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Analyzer)]
+		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
 		static void TestOtherMemberTypesWithRequires ()
 		{
 			MemberTypesWithRequires.field = 1;

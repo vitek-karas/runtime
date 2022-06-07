@@ -243,6 +243,10 @@ namespace ILCompiler.DependencyAnalysisFramework
 
                     Debug.Assert(currentNode.Marked);
 
+                    var nameOfNode = currentNode.ToString();
+                    if (nameOfNode.Contains("Program") || nameOfNode.Contains("MethodMetadataNode") || nameOfNode.Contains("DataflowAnalyzedMethodNode"))
+                        Debug.WriteLine("Stop");
+
                     // Only some marked objects are interesting for dynamic dependencies
                     // store those in a separate list to avoid excess scanning over non-interesting
                     // nodes during dynamic dependency discovery

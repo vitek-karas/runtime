@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using ILCompiler.Logging;
 using ILLink.Shared.DataFlow;
 using ILLink.Shared.TrimAnalysis;
 using ILLink.Shared.TypeSystemProxy;
@@ -49,6 +51,10 @@ namespace ILCompiler.Dataflow
 
     abstract partial class MethodBodyScanner
     {
+        private const string RequiresUnreferencedCodeAttribute = nameof(RequiresUnreferencedCodeAttribute);
+        private const string RequiresDynamicCodeAttribute = nameof(RequiresDynamicCodeAttribute);
+        private const string RequiresAssemblyFilesAttribute = nameof(RequiresAssemblyFilesAttribute);
+
         protected static ValueSetLattice<SingleValue> MultiValueLattice => default;
 
         internal MultiValue ReturnValue { private set; get; }
@@ -253,7 +259,7 @@ namespace ILCompiler.Dataflow
             }
         }
 
-        public void Scan(MethodIL methodBody)
+        public void Scan(MethodIL methodBody, Logger logger)
         {
             MethodDesc thisMethod = methodBody.OwningMethod;
 
@@ -507,7 +513,7 @@ namespace ILCompiler.Dataflow
                     case ILOpcode.ldsfld:
                     case ILOpcode.ldflda:
                     case ILOpcode.ldsflda:
-                        ScanLdfld(methodBody, offset, opcode, (FieldDesc)methodBody.GetObject(reader.ReadILToken()), currentStack);
+                        ScanLdfld(methodBody, offset, opcode, (FieldDesc)methodBody.GetObject(reader.ReadILToken()), currentStack, logger);
                         break;
 
                     case ILOpcode.newarr:
@@ -895,13 +901,19 @@ namespace ILCompiler.Dataflow
             int offset,
             ILOpcode opcode,
             FieldDesc field,
-            Stack<StackSlot> currentStack
+            Stack<StackSlot> currentStack,
+            Logger logger
             )
         {
             if (opcode == ILOpcode.ldfld || opcode == ILOpcode.ldflda)
                 PopUnknown(currentStack, 1, methodBody, offset);
 
             bool isByRef = opcode == ILOpcode.ldflda || opcode == ILOpcode.ldsflda;
+
+            var diagnosticContextForRUC = new DiagnosticContext(new MessageOrigin(methodBody.OwningMethod), !ReflectionMethodBodyScanner.ShouldSuppressAnalysisWarningsForRequires(methodBody.OwningMethod, RequiresUnreferencedCodeAttribute), logger);
+            var diagnosticContextForRDC = new DiagnosticContext(new MessageOrigin(methodBody.OwningMethod), !ReflectionMethodBodyScanner.ShouldSuppressAnalysisWarningsForRequires(methodBody.OwningMethod, RequiresDynamicCodeAttribute), logger);
+            ReflectionMethodBodyScanner.CheckAndReportRequires(field, diagnosticContextForRUC, RequiresUnreferencedCodeAttribute);
+            ReflectionMethodBodyScanner.CheckAndReportRequires(field, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
 
             StackSlot slot = new StackSlot(GetFieldValue(field), isByRef);
             currentStack.Push(slot);
