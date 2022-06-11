@@ -21,38 +21,9 @@ namespace Mono.Linker.Tests.Cases.Repro
 	[ExpectedNoWarnings]
 	public class Program
 	{
-
-		public static void Main ()
+		static void Main ()
 		{
-			TestOtherMemberTypesWithRequires ();
-		}
-
-		[ExpectedWarning ("IL2026", "MemberTypesWithRequires.field")]
-		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.field", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
-		[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Property.set")]
-		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.Property.set", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
-		[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove")]
-		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
-		static void TestOtherMemberTypesWithRequires ()
-		{
-			MemberTypesWithRequires.field = 1;
-			MemberTypesWithRequires.Property = 1;
-			MemberTypesWithRequires.Event -= null;
-		}
-
-		[RequiresUnreferencedCode ("--MemberTypesWithRequires--")]
-		[RequiresDynamicCode ("--MemberTypesWithRequires--")]
-		class MemberTypesWithRequires
-		{
-			public static int field;
-			public static int Property { get; set; }
-
-			// These should not be reported https://github.com/mono/linker/issues/2218
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.add", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.add", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Trimmer)]
-			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Trimmer)]
-			public static event EventHandler Event;
+			Console.WriteLine ("Hello world");
 		}
 	}
 }

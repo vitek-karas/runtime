@@ -152,7 +152,7 @@ namespace ILCompiler.Dataflow
                 methodBody = new InstantiatedMethodIL(methodBody.OwningMethod, methodBody);
             }
 
-            scanner.Scan(methodBody, logger);
+            scanner.Scan(methodBody);
 
             if (!methodBody.OwningMethod.Signature.ReturnType.IsVoid)
             {

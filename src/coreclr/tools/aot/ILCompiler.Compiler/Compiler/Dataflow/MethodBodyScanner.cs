@@ -51,10 +51,6 @@ namespace ILCompiler.Dataflow
 
     abstract partial class MethodBodyScanner
     {
-        private const string RequiresUnreferencedCodeAttribute = nameof(RequiresUnreferencedCodeAttribute);
-        private const string RequiresDynamicCodeAttribute = nameof(RequiresDynamicCodeAttribute);
-        private const string RequiresAssemblyFilesAttribute = nameof(RequiresAssemblyFilesAttribute);
-
         protected static ValueSetLattice<SingleValue> MultiValueLattice => default;
 
         internal MultiValue ReturnValue { private set; get; }
@@ -259,7 +255,7 @@ namespace ILCompiler.Dataflow
             }
         }
 
-        public void Scan(MethodIL methodBody, Logger logger)
+        public void Scan(MethodIL methodBody)
         {
             MethodDesc thisMethod = methodBody.OwningMethod;
 
@@ -513,7 +509,7 @@ namespace ILCompiler.Dataflow
                     case ILOpcode.ldsfld:
                     case ILOpcode.ldflda:
                     case ILOpcode.ldsflda:
-                        ScanLdfld(methodBody, offset, opcode, (FieldDesc)methodBody.GetObject(reader.ReadILToken()), currentStack, logger);
+                        ScanLdfld(methodBody, offset, opcode, (FieldDesc)methodBody.GetObject(reader.ReadILToken()), currentStack);
                         break;
 
                     case ILOpcode.newarr:
@@ -901,8 +897,7 @@ namespace ILCompiler.Dataflow
             int offset,
             ILOpcode opcode,
             FieldDesc field,
-            Stack<StackSlot> currentStack,
-            Logger logger
+            Stack<StackSlot> currentStack
             )
         {
             if (opcode == ILOpcode.ldfld || opcode == ILOpcode.ldflda)

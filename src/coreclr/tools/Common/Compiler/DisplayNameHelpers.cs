@@ -133,11 +133,6 @@ namespace ILCompiler
         }
 #endif
 
-        /*public static string GetDisplayName(this TypeDesc type)
-        {
-            return Formatter.Instance.FormatName(type, FormatOptions.NamespaceQualify);
-        }*/
-
         public static string GetDisplayName(this TypeDesc type)
         {
             var sb = new StringBuilder();
