@@ -388,6 +388,14 @@ namespace ILCompiler.Dataflow
             CheckAndReportRequires(field.Field, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
         }
 
+        protected override void HandleReadField(MethodIL methodBody, int offset, FieldDesc field)
+        {
+            var diagnosticContextForRUC = new DiagnosticContext(new MessageOrigin(methodBody, offset), !ShouldSuppressAnalysisWarningsForRequires(methodBody.OwningMethod, RequiresUnreferencedCodeAttribute), _logger);
+            var diagnosticContextForRDC = new DiagnosticContext(new MessageOrigin(methodBody, offset), !ShouldSuppressAnalysisWarningsForRequires(methodBody.OwningMethod, RequiresDynamicCodeAttribute), _logger);
+            CheckAndReportRequires(field, diagnosticContextForRUC, RequiresUnreferencedCodeAttribute);
+            CheckAndReportRequires(field, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
+        }
+
         protected override void HandleStoreParameter(MethodIL method, int offset, MethodParameterValue parameter, MultiValue valueToStore)
         {
             if (parameter.DynamicallyAccessedMemberTypes != 0)

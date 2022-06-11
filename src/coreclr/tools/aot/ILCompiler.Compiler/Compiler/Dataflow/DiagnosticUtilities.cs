@@ -79,6 +79,9 @@ namespace ILCompiler.Dataflow
                 case PropertyPseudoDesc property:
                     decoded = property.GetDecodedCustomAttribute("System.Diagnostics.CodeAnalysis", requiresAttributeName);
                     break;
+                case EventPseudoDesc @event:
+                    decoded = @event.GetDecodedCustomAttribute("System.Diagnostics.CodeAnalysis", requiresAttributeName);
+                    break;
                 default:
                     Debug.Fail("Trying to operate with unsupported TypeSystemEntity " + member.GetType().ToString());
                     break;
@@ -96,6 +99,20 @@ namespace ILCompiler.Dataflow
             var metadataReader = ecmaType.MetadataReader;
 
             var attributeHandle = metadataReader.GetCustomAttributeHandle(prop.GetCustomAttributes,
+                attributeNamespace, attributeName);
+
+            if (attributeHandle.IsNil)
+                return null;
+
+            return metadataReader.GetCustomAttribute(attributeHandle).DecodeValue(new CustomAttributeTypeProvider(ecmaType.EcmaModule));
+        }
+
+        public static CustomAttributeValue<TypeDesc>? GetDecodedCustomAttribute(this EventPseudoDesc @event, string attributeNamespace, string attributeName)
+        {
+            var ecmaType = @event.OwningType as EcmaType;
+            var metadataReader = ecmaType.MetadataReader;
+
+            var attributeHandle = metadataReader.GetCustomAttributeHandle(@event.GetCustomAttributes,
                 attributeNamespace, attributeName);
 
             if (attributeHandle.IsNil)
@@ -184,6 +201,9 @@ namespace ILCompiler.Dataflow
         internal static bool DoesPropertyRequire(this PropertyPseudoDesc property, string requiresAttribute, [NotNullWhen(returnValue: true)] out CustomAttributeValue<TypeDesc>? attribute) =>
             TryGetRequiresAttribute(property, requiresAttribute, out attribute);
 
+        internal static bool DoesEventRequire(this EventPseudoDesc @event, string requiresAttribute, [NotNullWhen(returnValue: true)] out CustomAttributeValue<TypeDesc>? attribute) =>
+            TryGetRequiresAttribute(@event, requiresAttribute, out attribute);
+
         /// <summary>
 		/// Determines if member requires (and thus any usage of such method should be warned about).
 		/// </summary>
@@ -197,6 +217,7 @@ namespace ILCompiler.Dataflow
                 MethodDesc method => DoesMethodRequire(method, requiresAttribute, out attribute),
                 FieldDesc field => DoesFieldRequire(field, requiresAttribute, out attribute),
                 PropertyPseudoDesc property => DoesPropertyRequire(property, requiresAttribute, out attribute),
+                EventPseudoDesc @event => DoesEventRequire(@event, requiresAttribute, out attribute),
                 _ => false
             };
         }

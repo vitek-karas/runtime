@@ -910,16 +910,17 @@ namespace ILCompiler.Dataflow
 
             bool isByRef = opcode == ILOpcode.ldflda || opcode == ILOpcode.ldsflda;
 
-            var diagnosticContextForRUC = new DiagnosticContext(new MessageOrigin(methodBody.OwningMethod), !ReflectionMethodBodyScanner.ShouldSuppressAnalysisWarningsForRequires(methodBody.OwningMethod, RequiresUnreferencedCodeAttribute), logger);
-            var diagnosticContextForRDC = new DiagnosticContext(new MessageOrigin(methodBody.OwningMethod), !ReflectionMethodBodyScanner.ShouldSuppressAnalysisWarningsForRequires(methodBody.OwningMethod, RequiresDynamicCodeAttribute), logger);
-            ReflectionMethodBodyScanner.CheckAndReportRequires(field, diagnosticContextForRUC, RequiresUnreferencedCodeAttribute);
-            ReflectionMethodBodyScanner.CheckAndReportRequires(field, diagnosticContextForRDC, RequiresDynamicCodeAttribute);
+            HandleReadField(methodBody, offset, field);
 
             StackSlot slot = new StackSlot(GetFieldValue(field), isByRef);
             currentStack.Push(slot);
         }
 
         protected virtual void HandleStoreField(MethodIL method, int offset, FieldValue field, MultiValue valueToStore)
+        {
+        }
+
+        protected virtual void HandleReadField(MethodIL method, int offset, FieldDesc field)
         {
         }
 

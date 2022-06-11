@@ -46,6 +46,21 @@ namespace ILCompiler
                 sb.Append('.');
                 sb.Append(property.GetMethod.Name == method.Name ? "get" : "set");
             }
+            else if (method.GetEventForAccessor() is EventPseudoDesc @event)
+            {
+                sb.Append(@event.Name);
+                sb.Append('.');
+                string accessor;
+                if (method.Name == @event.AddMethod.Name)
+                    accessor = "add";
+                else if (method.Name == @event.RemoveMethod.Name)
+                    accessor = "remove";
+                else if (method.Name == @event.RaiseMethod.Name)
+                    accessor = "raise";
+                else
+                    throw new NotSupportedException();
+                sb.Append(accessor);
+            }
             else
             {
                 sb.Append(method.Name);

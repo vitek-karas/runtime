@@ -24,21 +24,35 @@ namespace Mono.Linker.Tests.Cases.Repro
 
 		public static void Main ()
 		{
-			TestStaticCtorMarkingIsTriggeredByFieldAccessRead ();
+			TestOtherMemberTypesWithRequires ();
 		}
 
-		[ExpectedWarning ("IL2026", "StaticCCtorTriggeredByFieldAccessRead.field", "Message for --StaticCCtorTriggeredByFieldAccessRead--")]
-		[ExpectedWarning ("IL3050", "StaticCCtorTriggeredByFieldAccessRead.field", "Message for --StaticCCtorTriggeredByFieldAccessRead--", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
-		static void TestStaticCtorMarkingIsTriggeredByFieldAccessRead ()
+		[ExpectedWarning ("IL2026", "MemberTypesWithRequires.field")]
+		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.field", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+		[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Property.set")]
+		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.Property.set", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+		[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove")]
+		[ExpectedWarning ("IL3050", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Analyzer | ProducedBy.NativeAot)]
+		static void TestOtherMemberTypesWithRequires ()
 		{
-			var _ = StaticCCtorTriggeredByFieldAccessRead.field;
+			MemberTypesWithRequires.field = 1;
+			MemberTypesWithRequires.Property = 1;
+			MemberTypesWithRequires.Event -= null;
 		}
 
-		[RequiresUnreferencedCode ("Message for --StaticCCtorTriggeredByFieldAccessRead--")]
-		[RequiresDynamicCode ("Message for --StaticCCtorTriggeredByFieldAccessRead--")]
-		class StaticCCtorTriggeredByFieldAccessRead
+		[RequiresUnreferencedCode ("--MemberTypesWithRequires--")]
+		[RequiresDynamicCode ("--MemberTypesWithRequires--")]
+		class MemberTypesWithRequires
 		{
-			public static int field = 42;
+			public static int field;
+			public static int Property { get; set; }
+
+			// These should not be reported https://github.com/mono/linker/issues/2218
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.add", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.add", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Trimmer)]
+			[ExpectedWarning ("IL2026", "MemberTypesWithRequires.Event.remove", ProducedBy = ProducedBy.Trimmer)]
+			public static event EventHandler Event;
 		}
 	}
 }
