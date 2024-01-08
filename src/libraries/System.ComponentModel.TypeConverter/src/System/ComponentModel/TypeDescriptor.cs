@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Xml.Linq;
 
 namespace System.ComponentModel
 {
@@ -3115,6 +3116,7 @@ namespace System.ComponentModel
             /// Implements GetTypeDescriptor. This creates a custom type
             /// descriptor that walks the linked list for each of its calls.
             /// </summary>
+            [RequiresUnreferencedCode("TEMPORARY")]
             public override ICustomTypeDescriptor GetTypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type objectType, object? instance)
             {
                 ArgumentNullException.ThrowIfNull(objectType);
@@ -3124,12 +3126,12 @@ namespace System.ComponentModel
                     throw new ArgumentException(nameof(instance));
                 }
 
-                return new DefaultTypeDescriptor(this, objectType, instance);
+                return new DefaultTypeDescriptorWithInstance(this, objectType, instance);
             }
 
             internal DefaultTypeDescriptor GetDefaultTypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type objectType)
             {
-                return new DefaultTypeDescriptor(this, objectType, instance: null);
+                return new DefaultTypeDescriptor(this, objectType);
             }
 
             public override bool IsSupportedType(Type type)
@@ -3441,25 +3443,36 @@ namespace System.ComponentModel
             private readonly TypeDescriptionNode _node;
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
             private readonly Type _objectType;
-            private readonly object? _instance;
 
             /// <summary>
             /// Creates a new WalkingTypeDescriptor.
             /// </summary>
             internal DefaultTypeDescriptor(
                 TypeDescriptionNode node,
-                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type objectType,
-                object? instance)
+                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type objectType)
             {
                 _node = node;
                 _objectType = objectType;
-                _instance = instance;
+            }
+
+            internal TypeDescriptionNode Node => _node;
+
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+            internal Type ObjectType => _objectType;
+
+            // This is inefficient - it forces an allocation every time it's used because it's an instance delegate
+            // which will likely also force boxing of this struct.
+            private ICustomTypeDescriptor? GetTypeDescriptorFromProvider(TypeDescriptionProvider p)
+            {
+                return p.GetTypeDescriptor(_objectType);
             }
 
             /// <summary>
             /// ICustomTypeDescriptor implementation.
             /// </summary>
-            public AttributeCollection GetAttributes()
+            public AttributeCollection GetAttributes() => GetAttributesInternal(this.GetTypeDescriptorFromProvider);
+
+            internal AttributeCollection GetAttributesInternal(Func<TypeDescriptionProvider, ICustomTypeDescriptor?> getTypeDescriptor)
             {
                 // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
                 // If so, we can call on it directly rather than creating another
@@ -3472,7 +3485,7 @@ namespace System.ComponentModel
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = getTypeDescriptor(p);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     attrs = desc.GetAttributes();
@@ -3486,7 +3499,12 @@ namespace System.ComponentModel
             /// <summary>
             /// ICustomTypeDescriptor implementation.
             /// </summary>
-            public string? GetClassName()
+            public string? GetClassName() => GetClassNameInternal(this.GetTypeDescriptorFromProvider);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            internal string? GetClassNameInternal(Func<TypeDescriptionProvider, ICustomTypeDescriptor?> getTypeDescriptor)
             {
                 // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
                 // If so, we can call on it directly rather than creating another
@@ -3499,7 +3517,7 @@ namespace System.ComponentModel
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = getTypeDescriptor(p);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     name = desc.GetClassName() ?? _objectType.FullName;
@@ -3511,7 +3529,12 @@ namespace System.ComponentModel
             /// <summary>
             /// ICustomTypeDescriptor implementation.
             /// </summary>
-            string? ICustomTypeDescriptor.GetComponentName()
+            string? ICustomTypeDescriptor.GetComponentName() => GetComponentNameInternal(null, this.GetTypeDescriptorFromProvider);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            internal string? GetComponentNameInternal(object? instance, Func<TypeDescriptionProvider, ICustomTypeDescriptor?> getTypeDescriptor)
             {
                 // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
                 // If so, we can call on it directly rather than creating another
@@ -3520,11 +3543,11 @@ namespace System.ComponentModel
                 string? name;
                 if (p is ReflectTypeDescriptionProvider)
                 {
-                    name = ReflectTypeDescriptionProvider.GetComponentName(_instance);
+                    name = ReflectTypeDescriptionProvider.GetComponentName(instance);
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = getTypeDescriptor(p);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     name = desc.GetComponentName();
@@ -3536,7 +3559,10 @@ namespace System.ComponentModel
             /// <summary>
             /// ICustomTypeDescriptor implementation.
             /// </summary>
-            [RequiresUnreferencedCode(TypeConverter.RequiresUnreferencedCodeMessage)]
+            //// This one is not required here, only due to inheritance rules
+            //[RequiresUnreferencedCode(TypeConverter.RequiresUnreferencedCodeMessage)]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "We don't want this method to have RUC, the interface forces it though")]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "TODO - custom descriptor")]
             public TypeConverter GetConverter()
             {
                 // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
@@ -3546,11 +3572,11 @@ namespace System.ComponentModel
                 TypeConverter? converter;
                 if (p is ReflectTypeDescriptionProvider rp)
                 {
-                    converter = rp.GetConverter(_objectType, _instance);
+                    converter = rp.GetConverter(_objectType);
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     converter = desc.GetConverter();
@@ -3574,11 +3600,11 @@ namespace System.ComponentModel
                 EventDescriptor? defaultEvent;
                 if (p is ReflectTypeDescriptionProvider rp)
                 {
-                    defaultEvent = rp.GetDefaultEvent(_objectType, _instance);
+                    defaultEvent = rp.GetDefaultEvent(_objectType);
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     defaultEvent = desc.GetDefaultEvent();
@@ -3590,7 +3616,8 @@ namespace System.ComponentModel
             /// <summary>
             /// ICustomTypeDescriptor implementation.
             /// </summary>
-            [RequiresUnreferencedCode(PropertyDescriptor.PropertyDescriptorPropertyTypeMessage)]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "We don't want this method to have RUC, the interface forces it though")]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "TODO - custom descriptor")]
             public PropertyDescriptor? GetDefaultProperty()
             {
                 // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
@@ -3600,11 +3627,11 @@ namespace System.ComponentModel
                 PropertyDescriptor? defaultProperty;
                 if (p is ReflectTypeDescriptionProvider rp)
                 {
-                    defaultProperty = rp.GetDefaultProperty(_objectType, _instance);
+                    defaultProperty = rp.GetDefaultProperty(_objectType);
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     defaultProperty = desc.GetDefaultProperty();
@@ -3613,11 +3640,8 @@ namespace System.ComponentModel
                 return defaultProperty;
             }
 
-            /// <summary>
-            /// ICustomTypeDescriptor implementation.
-            /// </summary>
             [RequiresUnreferencedCode(EditorRequiresUnreferencedCode)]
-            public object? GetEditor(Type editorBaseType)
+            internal object? GetEditorInternal(Type editorBaseType, object? instance)
             {
                 ArgumentNullException.ThrowIfNull(editorBaseType);
 
@@ -3628,11 +3652,11 @@ namespace System.ComponentModel
                 object? editor;
                 if (p is ReflectTypeDescriptionProvider rp)
                 {
-                    editor = rp.GetEditor(_objectType, _instance, editorBaseType);
+                    editor = rp.GetEditor(_objectType, instance, editorBaseType);
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, instance);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     editor = desc.GetEditor(editorBaseType);
@@ -3644,7 +3668,10 @@ namespace System.ComponentModel
             /// <summary>
             /// ICustomTypeDescriptor implementation.
             /// </summary>
-            public EventDescriptorCollection GetEvents()
+            [RequiresUnreferencedCode(EditorRequiresUnreferencedCode)]
+            public object? GetEditor(Type editorBaseType) => GetEditorInternal(editorBaseType, null);
+
+            public EventDescriptorCollection GetEventsInternal(Func<TypeDescriptionProvider, ICustomTypeDescriptor?> getTypeDescriptor)
             {
                 // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
                 // If so, we can call on it directly rather than creating another
@@ -3657,7 +3684,7 @@ namespace System.ComponentModel
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = getTypeDescriptor(p);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     events = desc.GetEvents();
@@ -3671,8 +3698,10 @@ namespace System.ComponentModel
             /// <summary>
             /// ICustomTypeDescriptor implementation.
             /// </summary>
-            [RequiresUnreferencedCode(AttributeCollection.FilterRequiresUnreferencedCodeMessage)]
-            public EventDescriptorCollection GetEvents(Attribute[]? attributes)
+            public EventDescriptorCollection GetEvents() => GetEventsInternal(this.GetTypeDescriptorFromProvider);
+
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "TODO - custom descriptor")]
+            internal EventDescriptorCollection GetEventsWithAttributesInternal(Attribute[]? attributes, object? instance)
             {
                 // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
                 // If so, we can call on it directly rather than creating another
@@ -3685,7 +3714,7 @@ namespace System.ComponentModel
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, instance);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     events = desc.GetEvents(attributes);
@@ -3699,8 +3728,14 @@ namespace System.ComponentModel
             /// <summary>
             /// ICustomTypeDescriptor implementation.
             /// </summary>
-            [RequiresUnreferencedCode(PropertyDescriptor.PropertyDescriptorPropertyTypeMessage)]
-            public PropertyDescriptorCollection GetProperties()
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "We don't want this method to have RUC, the interface forces it though")]
+            public EventDescriptorCollection GetEvents(Attribute[]? attributes) => GetEventsWithAttributesInternal(attributes, null);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "TODO - custom descriptor")]
+            internal PropertyDescriptorCollection GetPropertiesInternal(object? instance)
             {
                 // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
                 // If so, we can call on it directly rather than creating another
@@ -3713,7 +3748,7 @@ namespace System.ComponentModel
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, instance);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     properties = desc.GetProperties();
@@ -3727,8 +3762,14 @@ namespace System.ComponentModel
             /// <summary>
             /// ICustomTypeDescriptor implementation.
             /// </summary>
-            [RequiresUnreferencedCode(PropertyDescriptor.PropertyDescriptorPropertyTypeMessage + " " + AttributeCollection.FilterRequiresUnreferencedCodeMessage)]
-            public PropertyDescriptorCollection GetProperties(Attribute[]? attributes)
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "We don't want this method to have RUC, the interface forces it though")]
+            public PropertyDescriptorCollection GetProperties() => GetPropertiesInternal(null);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "TODO - custom descriptor")]
+            internal PropertyDescriptorCollection GetPropertiesInternal(Attribute[]? attributes, object? instance)
             {
                 // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
                 // If so, we can call on it directly rather than creating another
@@ -3741,7 +3782,7 @@ namespace System.ComponentModel
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, instance);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
                     properties = desc.GetProperties(attributes);
@@ -3755,7 +3796,10 @@ namespace System.ComponentModel
             /// <summary>
             /// ICustomTypeDescriptor implementation.
             /// </summary>
-            object? ICustomTypeDescriptor.GetPropertyOwner(PropertyDescriptor? pd)
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "We don't want this method to have RUC, the interface forces it though")]
+            public PropertyDescriptorCollection GetProperties(Attribute[]? attributes) => GetPropertiesInternal(attributes, null);
+
+            internal object? GetPropertyOwnerInternal(PropertyDescriptor? pd, object? instance, Func<TypeDescriptionProvider, ICustomTypeDescriptor?> getTypeDescriptor)
             {
                 // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
                 // If so, we can call on it directly rather than creating another
@@ -3764,18 +3808,183 @@ namespace System.ComponentModel
                 object? owner;
                 if (p is ReflectTypeDescriptionProvider)
                 {
-                    owner = ReflectTypeDescriptionProvider.GetPropertyOwner(_objectType, _instance!);
+                    owner = ReflectTypeDescriptionProvider.GetPropertyOwner(_objectType, instance!);
                 }
                 else
                 {
-                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_objectType, _instance);
+                    ICustomTypeDescriptor? desc = getTypeDescriptor(p);
                     if (desc == null)
                         throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _node.Provider.GetType().FullName, "GetTypeDescriptor"));
-                    owner = desc.GetPropertyOwner(pd) ?? _instance;
+                    owner = desc.GetPropertyOwner(pd) ?? instance;
                 }
 
                 return owner;
             }
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            object? ICustomTypeDescriptor.GetPropertyOwner(PropertyDescriptor? pd) => GetPropertyOwnerInternal(pd, null, this.GetTypeDescriptorFromProvider);
+        }
+
+        private readonly struct DefaultTypeDescriptorWithInstance : ICustomTypeDescriptor
+        {
+            private readonly DefaultTypeDescriptor _typeDescriptor;
+            private readonly object? _instance;
+
+            // This is necessary because we want to effectively remove all RUCs from the ICustomTypeDescriptor methods
+            // at least internally.
+            [RequiresUnreferencedCode("The Type of instance cannot be statically discovered.")]
+            internal DefaultTypeDescriptorWithInstance(
+                TypeDescriptionNode node,
+                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type objectType,
+                object? instance)
+            {
+                _typeDescriptor = new DefaultTypeDescriptor(node, objectType);
+                _instance = instance;
+            }
+
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "The constructor has the RUC")]
+            private ICustomTypeDescriptor? GetTypeDescriptorFromProvider(TypeDescriptionProvider p)
+            {
+                return p.GetTypeDescriptor(_typeDescriptor.ObjectType, _instance);
+            }
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            public AttributeCollection GetAttributes() => _typeDescriptor.GetAttributesInternal(this.GetTypeDescriptorFromProvider);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            public string? GetClassName() => _typeDescriptor.GetClassNameInternal(this.GetTypeDescriptorFromProvider);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            string? ICustomTypeDescriptor.GetComponentName() => _typeDescriptor.GetComponentNameInternal(_instance, this.GetTypeDescriptorFromProvider);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "The constructor has the RUC")]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "The constructor has the RUC")]
+            public TypeConverter GetConverter()
+            {
+                // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
+                // If so, we can call on it directly rather than creating another
+                // custom type descriptor
+                TypeDescriptionProvider p = _typeDescriptor.Node.Provider;
+                TypeConverter? converter;
+                if (p is ReflectTypeDescriptionProvider rp)
+                {
+                    converter = rp.GetConverter(_typeDescriptor.ObjectType, _instance);
+                }
+                else
+                {
+                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_typeDescriptor.ObjectType, _instance);
+                    if (desc == null)
+                        throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _typeDescriptor.Node.Provider.GetType().FullName, "GetTypeDescriptor"));
+                    converter = desc.GetConverter();
+                    if (converter == null)
+                        throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _typeDescriptor.Node.Provider.GetType().FullName, "GetConverter"));
+                }
+
+                return converter;
+            }
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "The constructor has the RUC")]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "The constructor has the RUC")]
+            public EventDescriptor? GetDefaultEvent()
+            {
+                // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
+                // If so, we can call on it directly rather than creating another
+                // custom type descriptor
+                TypeDescriptionProvider p = _typeDescriptor.Node.Provider;
+                EventDescriptor? defaultEvent;
+                if (p is ReflectTypeDescriptionProvider rp)
+                {
+                    defaultEvent = rp.GetDefaultEvent(_typeDescriptor.ObjectType, _instance);
+                }
+                else
+                {
+                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_typeDescriptor.ObjectType, _instance);
+                    if (desc == null)
+                        throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _typeDescriptor.Node.Provider.GetType().FullName, "GetTypeDescriptor"));
+                    defaultEvent = desc.GetDefaultEvent();
+                }
+
+                return defaultEvent;
+            }
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "The constructor has the RUC")]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "The constructor has the RUC")]
+            public PropertyDescriptor? GetDefaultProperty()
+            {
+                // Check to see if the provider we get is a ReflectTypeDescriptionProvider.
+                // If so, we can call on it directly rather than creating another
+                // custom type descriptor
+                TypeDescriptionProvider p = _typeDescriptor.Node.Provider;
+                PropertyDescriptor? defaultProperty;
+                if (p is ReflectTypeDescriptionProvider rp)
+                {
+                    defaultProperty = rp.GetDefaultProperty(_typeDescriptor.ObjectType, _instance);
+                }
+                else
+                {
+                    ICustomTypeDescriptor? desc = p.GetTypeDescriptor(_typeDescriptor.ObjectType, _instance);
+                    if (desc == null)
+                        throw new InvalidOperationException(SR.Format(SR.TypeDescriptorProviderError, _typeDescriptor.Node.Provider.GetType().FullName, "GetTypeDescriptor"));
+                    defaultProperty = desc.GetDefaultProperty();
+                }
+
+                return defaultProperty;
+            }
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "The constructor has the RUC")]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "The constructor has the RUC")]
+            public object? GetEditor(Type editorBaseType) => _typeDescriptor.GetEditorInternal(editorBaseType, _instance);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            public EventDescriptorCollection GetEvents() => _typeDescriptor.GetEventsInternal(this.GetTypeDescriptorFromProvider);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "The constructor has the RUC")]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "The constructor has the RUC")]
+            public EventDescriptorCollection GetEvents(Attribute[]? attributes) => _typeDescriptor.GetEventsWithAttributesInternal(attributes, _instance);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "The constructor has the RUC")]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "The constructor has the RUC")]
+            public PropertyDescriptorCollection GetProperties() => _typeDescriptor.GetPropertiesInternal(_instance);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2046:Inheritance", Justification = "The constructor has the RUC")]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode", Justification = "The constructor has the RUC")]
+            public PropertyDescriptorCollection GetProperties(Attribute[]? attributes) => _typeDescriptor.GetPropertiesInternal(attributes, _instance);
+
+            /// <summary>
+            /// ICustomTypeDescriptor implementation.
+            /// </summary>
+            object? ICustomTypeDescriptor.GetPropertyOwner(PropertyDescriptor? pd) => _typeDescriptor.GetPropertyOwnerInternal(pd, _instance, this.GetTypeDescriptorFromProvider);
         }
 
         /// <summary>

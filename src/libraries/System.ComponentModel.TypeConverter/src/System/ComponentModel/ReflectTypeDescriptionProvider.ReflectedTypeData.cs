@@ -167,6 +167,8 @@ namespace System.ComponentModel
                 return null;
             }
 
+            internal TypeConverter GetConverter() => GetConverterFromType(null);
+
             /// <summary>
             /// Retrieves the type converter. If instance is non-null,
             /// it will be used to retrieve attributes. Otherwise, _type
@@ -196,6 +198,15 @@ namespace System.ComponentModel
                     }
                 }
 
+                return GetConverterFromType(typeAttr);
+            }
+
+            /// <summary>
+            /// Gets a converter based on the information from the _type alone
+            /// </summary>
+            /// <param name="typeAttr">Optional attribute from an instance if available</param>
+            private TypeConverter GetConverterFromType(TypeConverterAttribute? typeAttr)
+            {
                 // If we got here, we return our type-based converter.
                 if (_converter == null)
                 {
@@ -222,6 +233,21 @@ namespace System.ComponentModel
                 return _converter;
             }
 
+            internal EventDescriptor? GetDefaultEvent()
+            {
+                AttributeCollection attributes;
+
+                attributes = TypeDescriptor.GetAttributes(_type);
+
+                DefaultEventAttribute? attr = (DefaultEventAttribute?)attributes[typeof(DefaultEventAttribute)];
+                if (attr != null && attr.Name != null)
+                {
+                    return TypeDescriptor.GetEvents(_type)[attr.Name];
+                }
+
+                return null;
+            }
+
             /// <summary>
             /// Return the default event. The default event is determined by the
             /// presence of a DefaultEventAttribute on the class.
@@ -234,23 +260,34 @@ namespace System.ComponentModel
                 if (instance != null)
                 {
                     attributes = TypeDescriptor.GetAttributes(instance);
-                }
-                else
-                {
-                    attributes = TypeDescriptor.GetAttributes(_type);
-                }
 
-                DefaultEventAttribute? attr = (DefaultEventAttribute?)attributes[typeof(DefaultEventAttribute)];
-                if (attr != null && attr.Name != null)
-                {
-                    if (instance != null)
+                    DefaultEventAttribute? attr = (DefaultEventAttribute?)attributes[typeof(DefaultEventAttribute)];
+                    if (attr != null && attr.Name != null)
                     {
                         return TypeDescriptor.GetEvents(instance)[attr.Name];
                     }
-                    else
-                    {
-                        return TypeDescriptor.GetEvents(_type)[attr.Name];
-                    }
+
+                    return null;
+                }
+                else
+                {
+                    return GetDefaultEvent();
+                }
+            }
+
+            /// <summary>
+            /// Return the default property.
+            /// </summary>
+            internal PropertyDescriptor? GetDefaultProperty()
+            {
+                AttributeCollection attributes;
+
+                attributes = TypeDescriptor.GetAttributes(_type);
+
+                DefaultPropertyAttribute? attr = (DefaultPropertyAttribute?)attributes[typeof(DefaultPropertyAttribute)];
+                if (attr != null && attr.Name != null)
+                {
+                    return TypeDescriptor.GetProperties(_type)[attr.Name];
                 }
 
                 return null;
@@ -267,26 +304,19 @@ namespace System.ComponentModel
                 if (instance != null)
                 {
                     attributes = TypeDescriptor.GetAttributes(instance);
-                }
-                else
-                {
-                    attributes = TypeDescriptor.GetAttributes(_type);
-                }
 
-                DefaultPropertyAttribute? attr = (DefaultPropertyAttribute?)attributes[typeof(DefaultPropertyAttribute)];
-                if (attr != null && attr.Name != null)
-                {
-                    if (instance != null)
+                    DefaultPropertyAttribute? attr = (DefaultPropertyAttribute?)attributes[typeof(DefaultPropertyAttribute)];
+                    if (attr != null && attr.Name != null)
                     {
                         return TypeDescriptor.GetProperties(instance)[attr.Name];
                     }
-                    else
-                    {
-                        return TypeDescriptor.GetProperties(_type)[attr.Name];
-                    }
-                }
 
-                return null;
+                    return null;
+                }
+                else
+                {
+                    return GetDefaultProperty();
+                }
             }
 
             /// <summary>
@@ -447,7 +477,6 @@ namespace System.ComponentModel
             /// <summary>
             /// Retrieves the properties for this type.
             /// </summary>
-            [RequiresUnreferencedCode(PropertyDescriptor.PropertyDescriptorPropertyTypeMessage)]
             internal PropertyDescriptorCollection GetProperties()
             {
                 // Worst case collision scenario:  we don't want the perf hit
@@ -484,10 +513,14 @@ namespace System.ComponentModel
             /// that this PropertyDescriptor came from is first checked,
             /// then a global Type.GetType is performed.
             /// </summary>
+            // BUG?: This feels problematic. The default behavior of annotated string is to resolve the
             [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode",
                 Justification = "Calling _type.Assembly.GetType on a non-assembly qualified type will still work. See https://github.com/mono/linker/issues/1895")]
             [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2057:TypeGetType",
                 Justification = "Using the non-assembly qualified type name will still work.")]
+            [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2073:ReturnValue",
+                Justification = "If the Type.GetType works, then the annotation should propagate")]
+            [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
             private Type? GetTypeFromName(
                 // this method doesn't create the type, but all callers are annotated with PublicConstructors,
                 // so use that value to ensure the Type will be preserved

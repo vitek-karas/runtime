@@ -108,7 +108,9 @@ namespace System.ComponentModel
         /// </summary>
         private sealed class IntrinsicTypeConverterData
         {
-            private readonly Func<Type, TypeConverter> _constructionFunc;
+            public delegate TypeConverter ConstructionCallback([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type);
+
+            private readonly ConstructionCallback _constructionFunc;
 
             private readonly bool _cacheConverterInstance;
 
@@ -124,13 +126,13 @@ namespace System.ComponentModel
             /// Indicates whether to cache created <see cref="TypeConverter"/> instances. This is false when the converter handles multiple types,
             /// specifically <see cref="EnumConverter"/>, <see cref="NullableConverter"/>, and <see cref="ReferenceConverter"/>.
             /// </param>
-            public IntrinsicTypeConverterData(Func<Type, TypeConverter> constructionFunc, bool cacheConverterInstance = true)
+            public IntrinsicTypeConverterData(ConstructionCallback constructionFunc, bool cacheConverterInstance = true)
             {
                 _constructionFunc = constructionFunc;
                 _cacheConverterInstance = cacheConverterInstance;
             }
 
-            public TypeConverter GetOrCreateConverterInstance(Type innerType)
+            public TypeConverter GetOrCreateConverterInstance([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type innerType)
             {
                 if (!_cacheConverterInstance)
                 {
@@ -154,7 +156,6 @@ namespace System.ComponentModel
         /// </remarks>
         private static Dictionary<object, IntrinsicTypeConverterData> IntrinsicTypeConverters
         {
-            [RequiresUnreferencedCode("NullableConverter's UnderlyingType cannot be statically discovered.")]
             get
             {
                 return LazyInitializer.EnsureInitialized(ref s_intrinsicTypeConverters, () => new Dictionary<object, IntrinsicTypeConverterData>(32)
@@ -194,15 +195,13 @@ namespace System.ComponentModel
                     [typeof(Array)] = new IntrinsicTypeConverterData((type) => new ArrayConverter()),
                     [typeof(ICollection)] = new IntrinsicTypeConverterData((type) => new CollectionConverter()),
                     [typeof(Enum)] = new IntrinsicTypeConverterData((type) => CreateEnumConverter(type), cacheConverterInstance: false),
-                    [s_intrinsicNullableKey] = new IntrinsicTypeConverterData((type) => CreateNullableConverter(type), cacheConverterInstance: false),
+                    [s_intrinsicNullableKey] = new IntrinsicTypeConverterData(([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] type) => CreateNullableConverter(type), cacheConverterInstance: false),
                     [s_intrinsicReferenceKey] = new IntrinsicTypeConverterData((type) => new ReferenceConverter(type), cacheConverterInstance: false),
                });
             }
         }
 
-        [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2026:RequiresUnreferencedCode",
-            Justification = "IntrinsicTypeConverters is marked with RequiresUnreferencedCode. It is the only place that should call this.")]
-        private static NullableConverter CreateNullableConverter(Type type) => new NullableConverter(type);
+        private static NullableConverter CreateNullableConverter([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type) => new NullableConverter(type);
 
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2067:UnrecognizedReflectionPattern",
             Justification = "Trimmer does not trim enums")]
@@ -375,6 +374,15 @@ namespace System.ComponentModel
         }
 
         /// <summary>
+        /// Retrieves the type converter.
+        /// </summary>
+        internal TypeConverter GetConverter([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
+        {
+            ReflectedTypeData td = GetTypeData(type, true)!;
+            return td.GetConverter();
+        }
+
+        /// <summary>
         /// Return the default event. The default event is determined by the
         /// presence of a DefaultEventAttribute on the class.
         /// </summary>
@@ -386,6 +394,16 @@ namespace System.ComponentModel
         }
 
         /// <summary>
+        /// Return the default event. The default event is determined by the
+        /// presence of a DefaultEventAttribute on the class.
+        /// </summary>
+        internal EventDescriptor? GetDefaultEvent([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
+        {
+            ReflectedTypeData td = GetTypeData(type, true)!;
+            return td.GetDefaultEvent();
+        }
+
+        /// <summary>
         /// Return the default property.
         /// </summary>
         [RequiresUnreferencedCode(PropertyDescriptor.PropertyDescriptorPropertyTypeMessage + " The Type of instance cannot be statically discovered.")]
@@ -393,6 +411,12 @@ namespace System.ComponentModel
         {
             ReflectedTypeData td = GetTypeData(type, true)!;
             return td.GetDefaultProperty(instance);
+        }
+
+        internal PropertyDescriptor? GetDefaultProperty([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
+        {
+            ReflectedTypeData td = GetTypeData(type, true)!;
+            return td.GetDefaultProperty();
         }
 
         /// <summary>
@@ -862,7 +886,6 @@ namespace System.ComponentModel
         /// <summary>
         /// Retrieves the properties for this type.
         /// </summary>
-        [RequiresUnreferencedCode(PropertyDescriptor.PropertyDescriptorPropertyTypeMessage)]
         internal PropertyDescriptorCollection GetProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
         {
             ReflectedTypeData td = GetTypeData(type, true)!;
@@ -1229,7 +1252,6 @@ namespace System.ComponentModel
         /// Static helper API around reflection to get and cache
         /// properties. This does not recurse to the base class.
         /// </summary>
-        [RequiresUnreferencedCode(PropertyDescriptor.PropertyDescriptorPropertyTypeMessage)]
         private static PropertyDescriptor[] ReflectGetProperties(
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type)
         {
@@ -1449,8 +1471,7 @@ namespace System.ComponentModel
         /// The strongly-typed dictionary maps object types to converter data objects which lazily
         /// creates (and caches for re-use, where applicable) converter instances.
         /// </summary>
-        [RequiresUnreferencedCode("NullableConverter's UnderlyingType cannot be statically discovered.")]
-        private static TypeConverter GetIntrinsicTypeConverter(Type callingType)
+        private static TypeConverter GetIntrinsicTypeConverter([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type callingType)
         {
             TypeConverter converter;
 

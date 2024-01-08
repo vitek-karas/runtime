@@ -77,7 +77,6 @@ namespace System.ComponentModel
         /// <summary>
         /// The main constructor for ReflectPropertyDescriptors.
         /// </summary>
-        [RequiresUnreferencedCode(PropertyDescriptorPropertyTypeMessage)]
         public ReflectPropertyDescriptor(
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type componentClass,
             string name,
@@ -113,7 +112,6 @@ namespace System.ComponentModel
         /// <summary>
         /// A constructor for ReflectPropertyDescriptors that have no attributes.
         /// </summary>
-        [RequiresUnreferencedCode(PropertyDescriptorPropertyTypeMessage)]
         public ReflectPropertyDescriptor(
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type componentClass,
             string name,
@@ -136,7 +134,6 @@ namespace System.ComponentModel
         /// <summary>
         /// A constructor for ReflectPropertyDescriptors that creates an extender property.
         /// </summary>
-        [RequiresUnreferencedCode(PropertyDescriptorPropertyTypeMessage)]
         public ReflectPropertyDescriptor(
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type componentClass,
             string name,
@@ -157,7 +154,6 @@ namespace System.ComponentModel
         /// This constructor takes an existing ReflectPropertyDescriptor and modifies it by merging in the
         /// passed-in attributes.
         /// </summary>
-        [RequiresUnreferencedCode(PropertyDescriptorPropertyTypeMessage)]
         public ReflectPropertyDescriptor(
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type componentClass,
             PropertyDescriptor oldReflectPropertyDescriptor,
@@ -726,7 +722,12 @@ namespace System.ComponentModel
         }
 
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2072:UnrecognizedReflectionPattern",
-            Justification = "ReflectPropertyDescriptor ctors are all marked as RequiresUnreferencedCode because PropertyType can't be annotated as 'All'.")]
+            Justification = "TODO: Plan is to disable the problematic parts of this algorithm via a feature switch.")]
+        // The only problematic piece is the TypeDescriptor.GetAttributes on PropertyType
+        // These are the lowest priority attributes (everything else overrides them), but maybe they're common
+        // We will have to figure this out.
+        // Also - getting the attributes via pure reflection would not be a problem (no annotation requirements for getting attributes)
+        // the problem is that we go through the TypeDescriptor infra which requires lot of annotations (currently All).
         protected override void FillAttributes(IList attributes)
         {
             Debug.Assert(_componentClass != null, "Must have a component class for FillAttributes");
