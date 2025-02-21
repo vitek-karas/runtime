@@ -78,19 +78,6 @@ public:
     }
 };
 
-#if defined(TARGET_ANDROID)
-namespace {
-    constexpr static char ANDROID_LOGCAT_TAG[] { "CoreCLR" };
-    void LogErrorToLogcat(int priority, const char* format, ...) noexcept
-    {
-        va_list args;
-        va_start(args, format);
-        __android_log_vprint(priority, ANDROID_LOGCAT_TAG, format, args);
-        va_end(args);
-    }
-}
-#endif
-
 // Convert 8 bit string to unicode
 static LPCWSTR StringToUnicode(LPCSTR str)
 {
@@ -205,6 +192,7 @@ static void ConvertConfigPropertiesToUnicode(
     *propertyKeysWRef = propertyKeysW;
     *propertyValuesWRef = propertyValuesW;
 }
+
 coreclr_error_writer_callback_fn g_errorWriter = nullptr;
 
 //
