@@ -23,10 +23,6 @@
 #include <hostinformation.h>
 #include <corehost/host_runtime_contract.h>
 
-#if defined(TARGET_ANDROID)
-#include <android/log.h>
-#endif // TARGET_ANDROID
-
 #define ASSERTE_ALL_BUILDS(expr) _ASSERTE_ALL_BUILDS((expr))
 
 #ifdef TARGET_UNIX

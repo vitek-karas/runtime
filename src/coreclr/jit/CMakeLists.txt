@@ -504,7 +504,7 @@ endif()
 
 set(JIT_DLL_MAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/dllmain.cpp)
 
-if(CLR_CMAKE_TARGET_WIN32)
+if(CLR_CMAKE_HOST_WIN32)
   set(CLRJIT_EXPORTS ${CMAKE_CURRENT_LIST_DIR}/ClrJit.exports)
   set(JIT_EXPORTS_FILE ${CMAKE_CURRENT_BINARY_DIR}/ClrJit.exports.def)
   preprocess_file (${CLRJIT_EXPORTS} ${JIT_EXPORTS_FILE})
@@ -560,6 +560,10 @@ else()
     )
 endif(CLR_CMAKE_HOST_UNIX)
 
+if (CLR_CMAKE_HOST_ANDROID)
+    list(APPEND JIT_LINK_LIBRARIES log)
+endif()
+
 # Shared function for generating JIT
 function(add_jit jitName)
 
@@ -606,13 +610,6 @@ function(add_jit jitName)
         ${JIT_LINK_LIBRARIES}
         ${JIT_ARCH_LINK_LIBRARIES}
     )
-
-    if(CLR_CMAKE_TARGET_ANDROID)
-            target_link_libraries(${jitName}
-                PRIVATE
-                log
-            )
-    endif()
 
     if (CLR_CMAKE_HOST_WIN32)
         link_natvis_sources_for_target(${jitName} PRIVATE clrjit.natvis)
