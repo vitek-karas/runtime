@@ -84,8 +84,12 @@ async function getArgs() {
             console.debug(`could not load /runArgs.json: ${response.status}. Ignoring`);
         }
     }
-    if (!runArgsJson)
-        runArgsJson = initRunArgs({});
+    if (!runArgsJson) {
+        // Older xharness/browser test paths on release/8.0 don't always emit
+        // runArgs.json. Keep the memory snapshot dry-run opt-in on that fallback
+        // path to avoid the relink/native hangs seen in CI.
+        runArgsJson = initRunArgs({ memorySnapshot: false });
+    }
     return processArguments(queryArguments, runArgsJson);
 }
 
