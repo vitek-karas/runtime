@@ -44,7 +44,7 @@ tools:
     toolsets: [pull_requests, repos, issues, search]
     min-integrity: approved
   edit:
-  bash: ["dotnet", "git", "find", "ls", "cat", "grep", "head", "tail", "wc", "curl", "jq", "tee", "sed", "awk", "tr", "cut", "sort", "uniq", "xargs", "echo", "date", "mkdir", "test", "env", "basename", "dirname", "bash", "sh", "chmod"]
+  bash: ["dotnet", "git", "find", "ls", "cat", "grep", "head", "tail", "wc", "curl", "jq", "tee", "sed", "awk", "tr", "cut", "sort", "uniq", "xargs", "echo", "date", "mkdir", "test", "env", "basename", "dirname", "bash", "sh", "chmod", "gh"]
 
 checkout:
   fetch-depth: 200
@@ -111,9 +111,9 @@ To suggest changes, edit this file or comment on the PRs/comments it produces �
 2. **Caps per run: 5 `create_pull_request`, 10 `add_comment`.** On cap, record `-> skipped: cap reached` and move on.
 3. **Never mute.** No `[ActiveIssue]`, `[SkipOnPlatform]`, `[ConditionalFact]` added to disable, `<GCStressIncompatible>`, `<NativeAotIncompatible>`, `<*TestUnsupported>`, `Skip = "..."`, or any csproj exclusion that stops a test from running. If the only available mitigation is to disable a test, do NOT do it — open a help-wanted PR with a non-disabling best-effort change, or (if no code change is possible) a loop-in comment. Disabling is a human decision that lives outside this workflow.
 4. **One KBE = one outcome per run.** Exactly one of: a fix PR (confident or help-wanted), a loop-in comment, or a recorded skip. Never both a PR and a comment for the same KBE in the same run; always prefer the PR.
-5. **At most one open `[ci-fix]` PR and one `ci-fix` loop-in comment per KBE, ever.** Before opening a PR, run the Step 3 PR dedup. Before commenting, search for a prior `ci-fix` handoff using the structured-data or legacy-visible signatures in Step 3.6. If a comment already exists, skip with `-> skipped: loop-in comment already posted`. Build Analysis tracks occurrence counts in the KBE body; do not add occurrence chatter.
+5. **At most one open `[ci-fix]` PR and one `ci-fix` loop-in comment per KBE, ever.** Before opening a PR, run the Step 3 PR dedup. Before commenting, search every prior comment for a `ci-fix` handoff using the structured-data or legacy-visible signatures in Step 3.9, regardless of comment age. If a comment already exists, skip with `-> skipped: loop-in comment already posted`. Build Analysis tracks occurrence counts in the KBE body; do not add occurrence chatter.
 6. **Every PR title starts with `[ci-fix] `.** Every PR body and every loop-in comment carries the visible artifact block and the matching `safe-outputs.data` object (see Output identity).
-7. **Cross-run dedup is GitHub-search based, not `/tmp`.** `/tmp/gh-aw/agent/` is per-run only. Before emitting anything for a KBE, run the existing-artifact searches in Step 3 against live GitHub.
+7. **Cross-run dedup is live-GitHub based, not `/tmp`.** `/tmp/gh-aw/agent/` is per-run only. Use read-only `gh api` for the fixer's first-party artifacts (`github-actions[bot]` PRs, branches, and hand-off comments), because the integrity-gated MCP may filter them; use the `github` MCP for maintainer-authored content. If any required self-dedup enumeration fails, is incomplete, malformed, filtered, or ambiguous, fail closed: record `-> skipped: dedup enumeration unavailable, no artifact emitted` and do not analyze or emit anything for that KBE.
 8. **Fixes are small and validated; help-wanted PRs are honest.** A confident fix PR satisfies the small-fix bounds in Step 5 and is build-validated. A help-wanted PR may exceed those bounds or be unvalidated, but it MUST stay draft, carry a real best-effort diff (never a test-disable), and state plainly in the body what is unverified and what help is needed.
 9. **All intermediate state under `/tmp/gh-aw/agent/`.** Each bash invocation is a fresh subshell; persist anything you want to keep.
 10. **AzDO API: anonymous only.** Stay on `_apis/build/...`. Never call `_apis/test/...` or `vstmr.dev.azure.com` (both redirect to sign-in).
@@ -159,22 +159,80 @@ For each result, read the body + latest comments through the `github` MCP (NOT `
 
 **Freshness gate.** Skip any KBE created less than 60 minutes ago (`-> skipped: KBE too fresh, defer to next run`). The scanner and labeler run asynchronously; acting before the labeler has attached the `area-*` label produces mis-attributed hand-offs.
 
-### Step 3 — Existing-artifact dedup (search live GitHub, every KBE)
+### Step 3 — Existing-artifact dedup (complete live-GitHub snapshot, every KBE)
 
-Before doing any analysis work, confirm nothing already handles this KBE. GitHub's search tokenizer drops the leading `#`, so a bare `"#<kbe>"` phrase match is unreliable: build a `<kbe> -> [PRs]` map once per run by enumerating every `[ci-fix]` PR (`repo:dotnet/runtime is:pr in:title "[ci-fix]"` across `is:open`, `is:merged`, `is:closed closed:>=<today-30d>`) and parsing both its `head.ref` branch and each visible `Linked KBE:` field. Every `[ci-fix]` PR MUST use a `ci-fix/<kbe>-...` head branch, making the branch prefix a deterministic, punctuation-free dedup key. Resolve checks 1–3 against that map. Use the `github` MCP search tools:
+Before doing any analysis work, establish a complete self-dedup snapshot. The
+integrity-gated `github` MCP can return `[Filtered]` for the fixer's own
+`github-actions[bot]` artifacts, so do not treat a filtered or empty MCP search
+as proof that no prior artifact exists. Use read-only `gh api` only for
+first-party artifacts, and use the `github` MCP for maintainer-authored content.
 
-1. **Open fix PR already exists** — first check the enumerated `[ci-fix]` PR map for any open PR whose `head.ref` starts with `ci-fix/<kbe>-`. This prefix match is authoritative: if found, skip immediately even when title/body search misses. Otherwise fall back to `repo:dotnet/runtime is:pr is:open in:title "[ci-fix]" "#<kbe>"` OR body contains `Linked KBE: #<kbe>`. If found -> `-> skipped: open fix PR #<n> already exists`.
-2. **Merged fix PR exists** — `repo:dotnet/runtime is:pr is:merged "Linked KBE: #<kbe>"`. If found, the KBE is likely already fixed -> `-> skipped: fix PR #<n> already merged; KBE may be stale`.
-3. **Closed-unmerged fix PR within 30d** — `repo:dotnet/runtime is:pr is:closed -is:merged "Linked KBE: #<kbe>" closed:>=<today-30d>`. If found, do NOT re-open the same fix unless you have a clearly different change. Record `-> skipped: prior fix PR #<n> closed without merge within 30d`.
-4. **A human (non-`[ci-fix]`) PR already references the KBE** — `repo:dotnet/runtime is:pr is:open "#<kbe>"`. If a maintainer is already fixing it -> `-> skipped: human PR #<n> already addressing`.
-5. **Author already engaged on the KBE.** Inspect the comments collection itself; do not assume comments live at a fixed array index in an issue-read response. If the issue read did not return comments, call the corresponding comments tool explicitly. If any `MEMBER`/`OWNER` comment expresses active investigation or fix-forward intent (case-insensitive any of: `i'm fixing`, `i am fixing`, `investigating`, `will investigate`, `looking into`, `root cause`, `fix forward`, `fix-forward`, `landing in #`, `wait for #`, `pr is up`, `working on`), do NOT duplicate their work -> `-> skipped: author already engaged on #<kbe>`.
-6. **Prior hand-off comment** — inspect each comment independently. A handoff already exists when EITHER:
-   - its `Structured data:` JSON has `workflow_artifact: "ci-fix"`, `artifact_kind: "handoff"`, and `linked_kbe: <kbe>`; OR
-   - for artifacts created before structured data was available, the same comment contains all three visible lines `Workflow artifact: ci-fix`, `Artifact kind: handoff`, and `Linked KBE: #<kbe>`.
+1. **Build the first-party PR and branch map.** Enumerate all pull requests and
+   all branches, with pagination, using `gh api --paginate --slurp` against
+   `"repos/dotnet/runtime/pulls?state=all&per_page=100"` and
+   `"repos/dotnet/runtime/branches?per_page=100"`. Filter the API output by
+   `user.login == "github-actions[bot]"` before examining any PR body, then
+   retain for each first-party PR
+   `number`, `state`, `merged_at`, `closed_at`, `title`, `body`, `user.login`,
+   and `head.ref`; retain every branch name. Filter the PR map to the
+   fixer's own `[ci-fix]` artifacts (`github-actions[bot]` plus the visible or
+   structured `ci-fix` identity). Do not use `search_pull_requests` for
+   `head.ref` — it does not expose that field. A branch under `ci-fix/` is a
+   backstop even when the PR search would not find the PR; match the KBE id as
+   a hyphen-delimited token anywhere after `ci-fix/` so older branches with a
+   non-leading id are still detected.
+2. **Build the hand-off comment map.** For this KBE, enumerate every comments
+   page with `gh api --paginate --slurp
+   "repos/dotnet/runtime/issues/<kbe>/comments?per_page=100"`; filter by
+   `user.login == "github-actions[bot]"` before inspecting all
+   `github-actions[bot]` comments independently for the structured-data or
+   legacy-visible handoff signatures below. Do not rely on the issue-read
+   comments array, a fixed index, or a recency limit. Do not use `gh` to read
+   or quote maintainer-authored content.
+3. **Fail closed on an unverifiable snapshot.** A nonzero command, malformed
+   JSON, incomplete pagination, `[Filtered]` result, or a matching branch that
+   cannot be reconciled with the PR map means deduplication is not verified:
+   record `-> skipped: dedup enumeration unavailable, no artifact emitted` and
+   do not continue to analysis or call a safe output. An empty result is valid
+   only after the corresponding full enumeration succeeds. Persist the verified
+   snapshot and each KBE's dedup verdict to `/tmp/gh-aw/agent/dedup/<kbe>.txt`
+   so later steps don't re-query.
+4. **Open fix PR already exists** — check the map for an open first-party PR
+   whose `head.ref` starts with `ci-fix/<kbe>-`, or for a matching live
+   `ci-fix/` branch reconciled to such a PR. The branch match is authoritative,
+   even when title/body search misses. If found -> `-> skipped: open fix PR
+   #<n> already exists`.
+5. **Merged fix PR exists** — check the first-party map for a merged PR whose
+   branch key or visible `Linked KBE: #<kbe>` field matches. If found, the KBE
+   is likely already fixed -> `-> skipped: fix PR #<n> already merged; KBE may
+   be stale`.
+6. **Closed-unmerged fix PR within 30d** — check the first-party map for a
+   closed, unmerged PR whose branch key or visible `Linked KBE: #<kbe>` field
+   matches and whose `closed_at` is within 30 days. If found, do NOT re-open
+   the same fix unless you have a clearly different change. Record
+   `-> skipped: prior fix PR #<n> closed without merge within 30d`.
+7. **A human (non-`[ci-fix]`) PR already references the KBE** —
+   `repo:dotnet/runtime is:pr is:open "#<kbe>"`. If a maintainer is already
+   fixing it -> `-> skipped: human PR #<n> already addressing`.
+8. **Author already engaged on the KBE.** Use the `github` MCP comments
+   collection itself; do not assume comments live at a fixed array index in an
+   issue-read response. If any `MEMBER`/`OWNER` comment expresses active
+   investigation or fix-forward intent (case-insensitive any of: `i'm fixing`,
+   `i am fixing`, `investigating`, `will investigate`, `looking into`, `root
+   cause`, `fix forward`, `fix-forward`, `landing in #`, `wait for #`, `pr is
+   up`, `working on`), do NOT duplicate their work -> `-> skipped: author
+   already engaged on #<kbe>`.
+9. **Prior hand-off comment** — inspect every first-party comment independently.
+   A handoff already exists when EITHER:
+   - its `Structured data:` JSON has `workflow_artifact: "ci-fix"`,
+     `artifact_kind: "handoff"`, and `linked_kbe: <kbe>`; OR
+   - for artifacts created before structured data was available, the same
+     comment contains all three visible lines `Workflow artifact: ci-fix`,
+     `Artifact kind: handoff`, and `Linked KBE: #<kbe>`.
 
-   You may still emit a fix PR this run if you have one, but you may NOT post a second comment (Hard rule 5).
-
-Persist each KBE's dedup verdict to `/tmp/gh-aw/agent/dedup/<kbe>.txt` so later steps don't re-query.
+   You may still emit a fix PR this run if you have one, but you may NOT post a
+   second comment (Hard rule 5). If a comment already exists -> `-> skipped:
+   loop-in comment already posted`.
 
 ### Step 4 — Root-cause analysis (read-only)
 
@@ -266,7 +324,7 @@ Run whatever validation you can and record the exact command + result (including
 
 Only when no candidate diff is producible at all. Emit one `add_comment` on the KBE using the Loop-in comment template. This contains your root-cause analysis, the suspected regressing PR (if any), and a "Suggested reviewers / area contacts" section.
 
-Respect Hard rule 5 (at most one loop-in comment per KBE, ever) — immediately before emitting, re-check the structured-data and legacy-visible handoff signatures from Step 3.6.
+Respect Hard rule 5 (at most one loop-in comment per KBE, ever) — immediately before emitting, re-check the structured-data and legacy-visible handoff signatures from Step 3.9.
 
 ### Step 6 — Mention rules (apply to help-wanted PR bodies and loop-in comments)
 
@@ -289,7 +347,7 @@ Per KBE, append one outcome line to `/tmp/gh-aw/agent/coverage.txt`:
 
 `<outcome>` is one of: `fix-PR #aw_<id>` (confident), `help-PR #aw_<id>` (needs review), `loopin-comment #<kbe>`, `skipped: <reason>`.
 
-Recognized skip reasons (reuse these phrasings so the feedback workflow's aggregation stays stable): `not yet area-labeled`, `KBE too fresh, defer to next run`, `open fix PR #<n> already exists`, `fix PR #<n> already merged; KBE may be stale`, `prior fix PR #<n> closed without merge within 30d`, `human PR #<n> already addressing`, `author already engaged on #<kbe>`, `loop-in comment already posted`, `signature no longer reproduces in cited build`, `no occurrence in last 14d, likely already fixed or retired`, `failing leg retired, no longer runs at HEAD`, `fix already present at HEAD; KBE stale`, `candidate fix already present in source`, `no producible diff (JIT/GC/security/API/infra) — comment`, `cap reached`, `integrity-filtered candidate, needs human review`. The list is non-exhaustive but additions SHOULD reuse one of these phrasings.
+Recognized skip reasons (reuse these phrasings so the feedback workflow's aggregation stays stable): `not yet area-labeled`, `KBE too fresh, defer to next run`, `open fix PR #<n> already exists`, `fix PR #<n> already merged; KBE may be stale`, `prior fix PR #<n> closed without merge within 30d`, `human PR #<n> already addressing`, `author already engaged on #<kbe>`, `loop-in comment already posted`, `dedup enumeration unavailable, no artifact emitted`, `signature no longer reproduces in cited build`, `no occurrence in last 14d, likely already fixed or retired`, `failing leg retired, no longer runs at HEAD`, `fix already present at HEAD; KBE stale`, `candidate fix already present in source`, `no producible diff (JIT/GC/security/API/infra) — comment`, `cap reached`, `integrity-filtered candidate, needs human review`. The list is non-exhaustive but additions SHOULD reuse one of these phrasings.
 
 At end of run, print this table to the agent log:
 
