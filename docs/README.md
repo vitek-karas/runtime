@@ -6,7 +6,7 @@ This repo includes several documents that explain both high-level and low-level 
 Intro to .NET
 ==================
 
-.NET is a self-contained .NET runtime and framework that implements ECMA 335. It can be (and has been) ported to multiple architectures and platforms. It support a variety of installation options, having no specific deployment requirements itself.
+.NET is a self-contained .NET runtime and framework that implements ECMA 335. It can be (and has been) ported to multiple architectures and platforms. It supports a variety of installation options, having no specific deployment requirements itself.
 
 Getting Started
 ===============
